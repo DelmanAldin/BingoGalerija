@@ -1,0 +1,4961 @@
+<!DOCTYPE html>
+<html lang="bs">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Bingo Galerija — IT Infrastructure Portal</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+<style>
+:root {
+  --bg:       #141414;
+  --surface:  #1e1e1e;
+  --surface2: #252525;
+  --surface3: #2d2d2d;
+  --border:   #333333;
+  --border2:  #404040;
+  --blue:     #00a651;
+  --blue-h:   #009144;
+  --blue-d:   #006830;
+  --blue-g:   rgba(0,166,81,0.08);
+  --blue-g2:  rgba(0,166,81,0.14);
+  --text:     #f3f3f3;
+  --text2:    #adadad;
+  --text3:    #707070;
+  --accent:   #50e6ff;
+  --green:    #13a10e;
+  --yellow:   #c19c00;
+  --red:      #c42b1c;
+  --radius:   6px;
+  --radius2:  10px;
+  --shadow:   0 4px 24px rgba(0,0,0,0.5);
+  --shadow2:  0 8px 40px rgba(0,0,0,0.7);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Sora', 'Segoe UI', system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--surface); }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--blue-h); }
+
+/* TOPBAR */
+.topbar {
+  position: sticky; top: 0; z-index: 200;
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  height: 56px; padding: 0 28px;
+  background: linear-gradient(90deg, #080e08 0%, #0d150d 60%, #111e12 100%);
+  border-bottom: 1px solid var(--border);
+  box-shadow: 0 1px 20px rgba(0,0,0,0.6);
+}
+.topbar-left { display: flex; align-items: center; gap: 16px; }
+.brand { display: flex; align-items: center; gap: 12px; }
+.brand-icon {
+  width: 34px; height: 34px; border-radius: 6px;
+  background: linear-gradient(135deg, #006830, #00a651);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 12px; color: #fff; letter-spacing: 0.5px;
+  flex-shrink: 0; box-shadow: 0 2px 8px rgba(0,166,81,0.4);
+}
+.brand-text { display: flex; flex-direction: column; gap: 1px; }
+.brand-name { font-size: 13px; font-weight: 600; color: var(--text); letter-spacing: 0.3px; }
+.brand-sub { font-size: 10px; color: var(--text3); font-weight: 400; letter-spacing: 0.2px; }
+.topbar-divider { width: 1px; height: 24px; background: var(--border); }
+.topbar-right { display: flex; align-items: center; gap: 10px; }
+
+/* BUTTONS */
+.btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 7px 14px; border-radius: var(--radius);
+  font-family: inherit; font-size: 13px; font-weight: 500;
+  cursor: pointer; transition: all 0.15s ease;
+  border: 1px solid transparent; text-decoration: none; white-space: nowrap;
+}
+.btn-ghost { background: transparent; border-color: var(--border); color: var(--text2); }
+.btn-ghost:hover { background: var(--surface2); border-color: var(--border2); color: var(--text); }
+.btn-primary { background: var(--blue); color: #fff; border-color: var(--blue); }
+.btn-primary:hover { background: var(--blue-h); border-color: var(--blue-h); box-shadow: 0 0 20px rgba(0,166,81,0.3); }
+.btn-mgmt {
+  background: linear-gradient(135deg, #1a1a2e, #16213e);
+  border: 1px solid rgba(80,230,255,0.25); color: var(--accent); font-weight: 600;
+}
+.btn-mgmt:hover {
+  background: linear-gradient(135deg, #1e1e3a, #1a2540);
+  border-color: rgba(80,230,255,0.5);
+  box-shadow: 0 0 20px rgba(80,230,255,0.15); transform: translateY(-1px);
+}
+.btn-mgmt.active {
+  background: linear-gradient(135deg, #003366, #004a90);
+  border-color: rgba(80,230,255,0.6); box-shadow: 0 0 24px rgba(80,230,255,0.25);
+}
+.btn-save {
+  background: linear-gradient(135deg, #004a20, #006629);
+  border: 1px solid rgba(19,161,14,0.4); color: #4caf50;
+}
+.btn-save:hover { background: linear-gradient(135deg, #005a28, #007832); box-shadow: 0 0 16px rgba(19,161,14,0.2); }
+.btn-add-obj {
+  background: linear-gradient(135deg, #1a2e1a, #1e3b1e);
+  border: 1px solid rgba(0,166,81,0.3); color: #4caf50; font-weight: 600;
+}
+.btn-add-obj:hover {
+  background: linear-gradient(135deg, #1e361e, #234023);
+  border-color: rgba(0,166,81,0.55);
+  box-shadow: 0 0 18px rgba(0,166,81,0.18); transform: translateY(-1px);
+}
+.btn svg { flex-shrink: 0; }
+
+/* WRAP */
+.wrap { max-width: 1320px; margin: 0 auto; padding: 28px 28px 60px; }
+
+/* SEARCH */
+.search-section {
+  display: flex; gap: 16px; align-items: center;
+  margin-bottom: 28px; padding: 20px 24px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius2); box-shadow: var(--shadow);
+}
+.search-icon-wrap { flex-shrink: 0; color: var(--text3); }
+.search-input-wrap { flex: 1; }
+.search-input {
+  width: 100%; background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--radius); color: var(--text);
+  font-family: inherit; font-size: 15px; font-weight: 400;
+  padding: 11px 16px; outline: none; transition: border-color 0.15s, box-shadow 0.15s;
+}
+.search-input::placeholder { color: var(--text3); }
+.search-input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(0,166,81,0.15); background: var(--surface3); }
+.search-meta { font-size: 12px; color: var(--text3); white-space: nowrap; }
+.search-meta strong { color: var(--blue); }
+
+/* STATS GRID */
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(260px,1fr)); gap: 18px; }
+.stat-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius2); padding: 0; overflow: hidden;
+  box-shadow: var(--shadow); transition: border-color 0.2s;
+}
+.stat-card:hover { border-color: var(--border2); }
+.stat-header {
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 18px; border-bottom: 1px solid var(--border); background: var(--surface2);
+}
+.stat-header-icon {
+  width: 28px; height: 28px; border-radius: 6px;
+  background: var(--blue-g2); border: 1px solid rgba(0,166,81,0.2);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; color: var(--blue);
+}
+.stat-title { font-size: 12px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.6px; }
+.stat-list { padding: 10px; display: flex; flex-direction: column; gap: 3px; }
+.stat-item {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 9px 12px; border-radius: var(--radius); cursor: pointer;
+  transition: all 0.15s; border: 1px solid transparent;
+}
+.stat-item:hover { background: var(--blue-g2); border-color: rgba(0,166,81,0.2); }
+.stat-item .k { font-size: 12.5px; color: var(--text2); font-weight: 400; }
+.stat-item .v {
+  font-size: 12px; font-weight: 700; color: var(--text);
+  background: var(--surface3); border: 1px solid var(--border);
+  border-radius: 4px; padding: 2px 8px; min-width: 28px; text-align: center;
+}
+
+/* OBJECT VIEW */
+.page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
+.breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.breadcrumb-sep { color: var(--text3); }
+.breadcrumb-link { color: var(--blue); cursor: pointer; text-decoration: none; }
+.breadcrumb-link:hover { text-decoration: underline; }
+.breadcrumb-current { color: var(--text); font-weight: 600; }
+.object-wrap { display: grid; grid-template-columns: 380px 1fr; gap: 20px; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius2); overflow: hidden; box-shadow: var(--shadow); }
+.card-header { padding: 16px 20px; border-bottom: 1px solid var(--border); background: var(--surface2); display: flex; align-items: center; gap: 10px; }
+.card-header-icon { color: var(--blue); flex-shrink: 0; }
+.card-title { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text2); }
+.card-body { padding: 16px 20px; }
+
+.obj-identity { padding: 16px 20px; border-bottom: 1px solid var(--border); }
+.obj-number { font-size: 36px; font-weight: 700; color: var(--blue); line-height: 1; letter-spacing: -1px; }
+.obj-name { font-size: 14px; font-weight: 500; color: var(--text); margin-top: 4px; }
+.obj-contact-wrap { margin-top: 10px; padding: 10px 14px; background: var(--surface3); border: 1px solid var(--border); border-radius: var(--radius); }
+.obj-contact-row { display: flex; align-items: flex-start; gap: 8px; font-size: 12.5px; padding: 3px 0; }
+.obj-contact-label { color: var(--text3); font-weight: 500; min-width: 72px; flex-shrink: 0; }
+.obj-contact-val { color: var(--text2); }
+.obj-contact-val a { color: var(--accent); text-decoration: none; }
+.obj-contact-val a:hover { text-decoration: underline; }
+
+.info-section { padding: 12px 20px; }
+.info-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); gap: 12px; min-height: 44px; }
+.info-row:last-child { border-bottom: none; }
+.info-label { font-size: 12px; color: var(--text3); font-weight: 500; letter-spacing: 0.2px; flex-shrink: 0; }
+.info-value { font-size: 13px; font-weight: 600; color: var(--text); text-align: right; }
+.info-edit-wrap { display: flex; align-items: center; gap: 8px; flex: 1; justify-content: flex-end; }
+.edit-field {
+  background: var(--surface3); border: 1px solid var(--blue);
+  border-radius: var(--radius); color: var(--text);
+  font-family: inherit; font-size: 13px; font-weight: 600;
+  padding: 5px 10px; outline: none; width: 100%; max-width: 200px;
+  box-shadow: 0 0 0 2px rgba(0,166,81,0.2); transition: box-shadow 0.15s;
+}
+.edit-field:focus { box-shadow: 0 0 0 3px rgba(0,166,81,0.3); }
+.edit-toggle {
+  flex-shrink: 0; background: transparent; border: 1px solid var(--border);
+  border-radius: var(--radius); color: var(--text3); cursor: pointer;
+  padding: 4px 7px; display: inline-flex; align-items: center;
+  font-size: 11px; gap: 4px; transition: all 0.15s; font-family: inherit;
+}
+.edit-toggle:hover { border-color: var(--blue); color: var(--blue); background: var(--blue-g2); }
+.save-section { padding: 14px 20px; border-top: 1px solid var(--border); background: var(--surface2); display: flex; gap: 10px; align-items: center; }
+.save-indicator { font-size: 11px; color: #4caf50; display: none; align-items: center; gap: 5px; }
+
+.badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 100px; font-size: 11px; font-weight: 600; letter-spacing: 0.3px; }
+.badge-fbih { background: rgba(0,120,212,0.12); border: 1px solid rgba(0,120,212,0.25); color: #50a0e4; }
+.badge-rs { background: rgba(196,43,28,0.12); border: 1px solid rgba(196,43,28,0.25); color: #e57373; }
+.badge-dist { background: rgba(193,156,0,0.12); border: 1px solid rgba(193,156,0,0.25); color: #c8a200; }
+
+/* GALLERY */
+.gallery-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(150px,1fr)); gap: 12px; padding: 16px; }
+.thumb { position: relative; overflow: hidden; border-radius: var(--radius); border: 1px solid var(--border); background: var(--surface2); cursor: pointer; transition: all 0.2s; }
+.thumb:hover { border-color: var(--blue); box-shadow: 0 0 20px rgba(0,166,81,0.2); transform: translateY(-2px); }
+.thumb img { width: 100%; height: 110px; object-fit: cover; display: block; transition: transform 0.3s; }
+.thumb:hover img { transform: scale(1.06); }
+.thumb-tag { position: absolute; bottom: 0; left: 0; right: 0; padding: 6px 8px 5px; background: linear-gradient(transparent,rgba(0,0,0,0.7)); font-size: 10.5px; color: rgba(255,255,255,0.75); font-weight: 500; }
+.gallery-empty { grid-column: 1/-1; padding: 40px; text-align: center; color: var(--text3); font-size: 13px; }
+
+/* FILTER TABLE */
+.result-table { width: 100%; border-collapse: collapse; }
+.result-table th { background: var(--surface2); padding: 10px 16px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text3); text-align: left; border-bottom: 1px solid var(--border); }
+.result-table td { padding: 11px 16px; font-size: 13px; border-bottom: 1px solid var(--border); cursor: pointer; color: var(--text2); transition: all 0.12s; }
+.result-table td:first-child { font-weight: 700; color: var(--blue); width: 80px; }
+.result-table tr:hover td { background: var(--blue-g2); color: var(--text); }
+.result-table tr:last-child td { border-bottom: none; }
+
+/* LIGHTBOX */
+#lightbox { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,0.92); z-index: 9999; backdrop-filter: blur(4px); overflow: hidden; }
+#lightbox.lb-zoomed { overflow: auto; align-items: flex-start; justify-content: flex-start; }
+.lightframe { position: relative; max-width: 94vw; max-height: 94vh; display: flex; align-items: center; justify-content: center; }
+.lightframe img { max-width: 90vw; max-height: 90vh; width: auto; height: auto; border-radius: var(--radius2); display: block; transition: all 0.25s; cursor: zoom-in; box-shadow: var(--shadow2); }
+#lightbox.lb-zoomed .lightframe { padding: 60px 40px 40px; }
+#lightbox.lb-zoomed .lightframe img { max-width: none; max-height: none; width: auto; height: auto; cursor: zoom-out; }
+.light-controls { position: absolute; right: -12px; top: -12px; display: flex; gap: 8px; transform: translateX(100%); }
+
+/* LOGIN MODAL */
+.modal-overlay { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,0.75); z-index: 8888; backdrop-filter: blur(6px); }
+.modal-overlay.open { display: flex; }
+.modal { background: var(--surface); border: 1px solid var(--border2); border-radius: 12px; width: 400px; max-width: 94vw; box-shadow: var(--shadow2); overflow: hidden; animation: modal-in 0.2s ease; }
+@keyframes modal-in { from{opacity:0;transform:scale(0.95) translateY(10px)} to{opacity:1;transform:scale(1) translateY(0)} }
+.modal-header { padding: 20px 24px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 14px; background: var(--surface2); }
+.modal-header-icon { width: 38px; height: 38px; border-radius: 8px; background: linear-gradient(135deg,#1a1a2e,#16213e); border: 1px solid rgba(80,230,255,0.25); display: flex; align-items: center; justify-content: center; color: var(--accent); flex-shrink: 0; }
+.modal-title { font-size: 15px; font-weight: 700; color: var(--text); }
+.modal-subtitle { font-size: 12px; color: var(--text3); margin-top: 2px; }
+.modal-body { padding: 24px; }
+.form-group { margin-bottom: 18px; }
+.form-label { display: block; font-size: 12px; font-weight: 600; color: var(--text3); margin-bottom: 7px; text-transform: uppercase; letter-spacing: 0.5px; }
+.form-input { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); font-family: inherit; font-size: 14px; padding: 11px 14px; outline: none; transition: border-color 0.15s, box-shadow 0.15s; }
+.form-input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(0,166,81,0.15); }
+.form-error { margin-top: 14px; padding: 10px 14px; background: rgba(196,43,28,0.1); border: 1px solid rgba(196,43,28,0.25); border-radius: var(--radius); font-size: 12.5px; color: #f44336; display: none; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 18px; }
+.form-grid .form-group { margin-bottom: 14px; }
+.form-grid .form-group.full { grid-column: 1/-1; }
+.add-modal { width: 620px; max-width: 97vw; max-height: 90vh; display: flex; flex-direction: column; }
+.add-modal .modal-body { overflow-y: auto; flex: 1; }
+.modal-footer { padding: 16px 24px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 10px; background: var(--surface2); }
+
+/* MANAGEMENT STATUS */
+.mgmt-status { display: none; align-items: center; gap: 8px; padding: 5px 12px; border-radius: 100px; background: rgba(80,230,255,0.08); border: 1px solid rgba(80,230,255,0.2); font-size: 11.5px; font-weight: 600; color: var(--accent); letter-spacing: 0.3px; }
+.mgmt-status.visible { display: flex; }
+.status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 8px var(--accent); animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+.home-float { position: fixed; left: 20px; bottom: 20px; z-index: 9990; display: none; }
+
+/* PAGE TRANSITIONS */
+@keyframes page-in {
+  from { opacity:0; transform: translateY(14px); }
+  to   { opacity:1; transform: translateY(0); }
+}
+@keyframes card-pop {
+  from { opacity:0; transform: scale(0.97) translateY(8px); }
+  to   { opacity:1; transform: scale(1) translateY(0); }
+}
+.anim-page { animation: page-in 0.28s cubic-bezier(0.22,1,0.36,1) both; }
+.anim-card { animation: card-pop 0.25s cubic-bezier(0.22,1,0.36,1) both; }
+.stat-grid-anim .stat-card { animation: card-pop 0.3s cubic-bezier(0.22,1,0.36,1) both; }
+.stat-grid-anim .stat-card:nth-child(1) { animation-delay: 0.03s; }
+.stat-grid-anim .stat-card:nth-child(2) { animation-delay: 0.09s; }
+.stat-grid-anim .stat-card:nth-child(3) { animation-delay: 0.15s; }
+.stat-grid-anim .stat-card:nth-child(4) { animation-delay: 0.21s; }
+
+.section-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.7px; color: var(--text3); margin-bottom: 14px; display: flex; align-items: center; gap: 10px; }
+.section-label::after { content:''; flex:1; height:1px; background: var(--border); }
+
+@media (max-width:900px) {
+  .object-wrap { grid-template-columns: 1fr; }
+  .topbar { padding: 12px 16px; height: auto; flex-wrap: wrap; gap: 10px; }
+  .wrap { padding: 16px 16px 60px; }
+  .search-section { flex-wrap: wrap; }
+  .light-controls { position: absolute; right: 8px; top: 8px; transform: none; }
+}
+@media (max-width:600px) {
+  .brand-sub { display: none; }
+  .topbar-divider { display: none; }
+  .stats-grid { grid-template-columns: 1fr; }
+}
+
+/* MAP */
+#bh-map {
+  height: 500px;
+  border-radius: var(--radius2);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  background: #111;
+}
+/* Tiny dot marker */
+.bm-dot {
+  width: 9px; height: 9px;
+  background: #00a651;
+  border: 1.5px solid rgba(255,255,255,0.22);
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px rgba(0,166,81,0.18), 0 1px 4px rgba(0,0,0,0.7);
+  cursor: pointer;
+  transition: transform 0.13s, box-shadow 0.13s, background 0.13s;
+}
+.bm-dot:hover, .bm-dot.hovered {
+  background: #13e86c;
+  transform: scale(1.7);
+  box-shadow: 0 0 0 3px rgba(0,232,108,0.28), 0 2px 8px rgba(0,0,0,0.8);
+}
+.leaflet-div-icon { background: transparent !important; border: none !important; }
+.leaflet-tooltip {
+  background: #1a1a1a !important;
+  border: 1px solid #353535 !important;
+  border-radius: 8px !important;
+  padding: 9px 13px !important;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.7) !important;
+  color: #f3f3f3 !important;
+  font-family: 'Sora', sans-serif !important;
+  pointer-events: none;
+}
+.leaflet-tooltip::before { display: none !important; }
+.leaflet-tooltip-top::before { border-top-color: #353535 !important; display: block !important; }
+.leaflet-control-zoom {
+  border: 1px solid #333 !important;
+  border-radius: 6px !important;
+  overflow: hidden;
+}
+.leaflet-control-zoom a {
+  background: #1e1e1e !important;
+  color: #adadad !important;
+  border-color: #333 !important;
+  width: 28px !important; height: 28px !important;
+  line-height: 28px !important;
+  font-size: 16px !important;
+}
+.leaflet-control-zoom a:hover { background: #2a2a2a !important; color: #00a651 !important; }
+.leaflet-control-attribution {
+  background: rgba(14,14,14,0.82) !important;
+  color: #444 !important;
+  font-size: 9px !important;
+  border-radius: 4px 0 0 0 !important;
+}
+.leaflet-control-attribution a { color: #555 !important; }
+@media (max-width:600px) {
+  #bh-map { height: 320px; }
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="brand">
+      <div class="brand-icon">BG</div>
+      <div class="brand-text">
+        <div class="brand-name">BINGO GALERIJA</div>
+        <div class="brand-sub">IT Infrastructure Portal</div>
+      </div>
+    </div>
+    <div class="topbar-divider"></div>
+    <div class="mgmt-status" id="mgmtStatus">
+      <div class="status-dot"></div>
+      Management Mode
+    </div>
+  </div>
+  <div class="topbar-right">
+    <button class="btn btn-ghost" id="homeTop">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      Početna
+    </button>
+    <button class="btn btn-add-obj" id="addObjBtn">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+      Novi objekat
+    </button>
+    <button class="btn btn-mgmt" id="mgmtBtn">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+      Management
+    </button>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="search-section">
+    <div class="search-icon-wrap">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    </div>
+    <div class="search-input-wrap">
+      <input id="searchBox" class="search-input" type="text" placeholder="Pretraži po broju objekta  (npr. 088, 239, 005...)">
+    </div>
+    <div class="search-meta"><strong id="objCount">—</strong> objekata u bazi</div>
+  </div>
+  <div id="content" aria-live="polite"></div>
+</div>
+
+<div id="lightbox" role="dialog" aria-modal="true">
+  <div class="lightframe">
+    <img id="lightImg" src="" alt="Preview">
+    <div class="light-controls">
+      <button class="btn btn-ghost" id="zoomBtn">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+        Zum
+      </button>
+      <button class="btn btn-ghost" id="closeLight">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        Zatvori
+      </button>
+    </div>
+  </div>
+</div>
+
+
+<div class="modal-overlay" id="addObjModal">
+  <div class="modal add-modal">
+    <div class="modal-header">
+      <div class="modal-header-icon" style="background:linear-gradient(135deg,#1a2e1a,#1e3b1e);border-color:rgba(0,166,81,0.3);">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4caf50" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+      </div>
+      <div>
+        <div class="modal-title">Dodaj novi objekat</div>
+        <div class="modal-subtitle">Unesite podatke za novi maloprodajni objekat</div>
+      </div>
+    </div>
+    <div class="modal-body" id="addObjBody">
+      <!-- Auth step -->
+      <div id="addAuthStep">
+        <div style="color:var(--text2);font-size:13px;margin-bottom:16px;padding:12px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:6px;"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+          Potrebna je administratorska autentifikacija.
+        </div>
+        <div class="form-group">
+          <label class="form-label">Korisničko ime</label>
+          <input type="text" id="addAuthUser" class="form-input" placeholder="Username" autocomplete="off">
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Lozinka</label>
+          <input type="password" id="addAuthPass" class="form-input" placeholder="Password" autocomplete="off">
+        </div>
+        <div class="form-error" id="addAuthError">Pogrešno korisničko ime ili lozinka.</div>
+      </div>
+      <!-- Form step -->
+      <div id="addFormStep" style="display:none">
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label">Broj objekta *</label>
+            <input type="text" id="nBroj" class="form-input" placeholder="npr. 277" maxlength="3">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Entitet</label>
+            <select id="nEntitet" class="form-input">
+              <option value="FBIH">FBIH</option>
+              <option value="RS">RS</option>
+              <option value="Distrikt">Distrikt</option>
+            </select>
+          </div>
+          <div class="form-group full">
+            <label class="form-label">Naziv objekta *</label>
+            <input type="text" id="nNaziv" class="form-input" placeholder="npr. Bingo Sarajevo - Centar">
+          </div>
+          <div class="form-group full">
+            <label class="form-label">Adresa</label>
+            <input type="text" id="nAdresa" class="form-input" placeholder="Ulica i grad">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Telefon</label>
+            <input type="text" id="nTelefon" class="form-input" placeholder="033/xxx-xxx">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Bingofon</label>
+            <input type="text" id="nBingofon" class="form-input" placeholder="061/xxx-xxx">
+          </div>
+          <div class="form-group full">
+            <label class="form-label">Model servera</label>
+            <input type="text" id="nModel" class="form-input" placeholder="npr. HPE ML30 Gen11">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Operativni sistem</label>
+            <input type="text" id="nOs" class="form-input" placeholder="npr. Windows Server 2022">
+          </div>
+          <div class="form-group">
+            <label class="form-label">RAM memorija</label>
+            <input type="text" id="nRam" class="form-input" placeholder="npr. 32 GB">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Broj kasa</label>
+            <input type="text" id="nKase" class="form-input" placeholder="npr. 4">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Datum zamjene</label>
+            <input type="date" id="nZamjena" class="form-input">
+          </div>
+          <div class="form-group full">
+            <label class="form-label">SQL verzija</label>
+            <input type="text" id="nSql" class="form-input" placeholder="npr. SQL 2016(13.1601.5)">
+          </div>
+        </div>
+        <div class="form-error" id="addFormError">Molimo unesite broj i naziv objekta.</div>
+      </div>
+    </div>
+    <div class="modal-footer" id="addObjFooter">
+      <button class="btn btn-ghost" id="addObjCancel">Odustani</button>
+      <button class="btn btn-primary" id="addObjAuth">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+        Prijavi se
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="loginModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-header-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+      </div>
+      <div>
+        <div class="modal-title">Management Authentication</div>
+        <div class="modal-subtitle">Unesite administratorske podatke za pristup</div>
+      </div>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Korisničko ime</label>
+        <input type="text" id="loginUser" class="form-input" placeholder="Username" autocomplete="off">
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">Lozinka</label>
+        <input type="password" id="loginPass" class="form-input" placeholder="Password" autocomplete="off">
+      </div>
+      <div class="form-error" id="loginError">Pogrešno korisničko ime ili lozinka.</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" id="loginCancel">Odustani</button>
+      <button class="btn btn-primary" id="loginSubmit">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+        Prijavi se
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="home-float" id="homeFloat">
+  <button class="btn btn-ghost" onclick="goHome()">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+    Početna
+  </button>
+</div>
+
+<script>
+/* ===== HELPERS ===== */
+function formatDateDMY(d){
+  if(!d) return '';
+  if(/^\d{2}\.\d{2}\.\d{4}$/.test(d)) return d;
+  const parts=d.split(/[-\/]/);
+  if(parts.length>=3){const y=parts[0],m=parts[1],day=(parts[2].slice(0,2)||'01');return String(day).padStart(2,'0')+'.'+String(m).padStart(2,'0')+'.'+y;}
+  const dt=new Date(d);
+  if(!isNaN(dt)){return String(dt.getDate()).padStart(2,'0')+'.'+String(dt.getMonth()+1).padStart(2,'0')+'.'+dt.getFullYear();}
+  return d;
+}
+function pad3(n){return String(n).padStart(3,'0');}
+function escapeHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/'/g,"&#39;").replace(/"/g,'&quot;');}
+
+const OBJECT_NAMES = {
+   "002": "Supermarket Stupine Tuzla",
+      "003": "Hipermarket Kalesija",
+      "004": "Minimarket Tojšići",
+      "005": "Hipermarket Šićki",
+      "006": "Minimarket Gornji Rainci",
+      "007": "Hipermarket Hadžići",
+      "008": "Tržni Centar Orašje",
+      "009": "Tržni centar Gračanica",
+      "010": "Hipermarket Gradačac",
+      "011": "OBJEKAT NE POSTOJI",
+      "012": "Minimarket Sapna",
+      "013": "Minimarket Korzo Tuzla",
+      "014": "Supermarket Slatina Tuzla",
+      "015": "Hipermarket Lukavac",
+      "016": "Minimarket Brčanska Malta Tuzla",
+      "017": "Supermarket Zenica-Crkvice",
+      "018": "Hipermarket Mostar",
+      "019": "OBJEKAT NE POSTOJI",
+      "020": "Minimarket Sjenjak Tuzla",
+      "021": "Minimarket Solina",
+      "022": "Supermarket Travnička Zenica",
+      "023": "OBJEKAT NE POSTOJI",
+      "024": "Minimarket Banovići",
+      "025": "Minimarket Skojevska Tuzla",
+      "026": "Minimarket Irac Tuzla",
+      "027": "Hipermarket Srebrenik",
+      "028": "Hipermarket Živinice",
+      "029": "Supermarket Zvjezdara Banovići",
+      "030": "OBJEKAT NE POSTOJI",
+      "031": "Hipermarket Doboj",
+      "032": "Minimarket Dobrinja Sarajevo",
+      "033": "Minimarket ŠiSelo Tuzla",
+      "034": "OBJEKAT NE POSTOJI",
+      "035": "Minimarket Kiseljak Tuzla",
+      "036": "Minimarket Lipnica",
+      "037": "Tržni Centar Brčko",
+      "038": "Tržni Centar Bijeljina",
+      "039": "Minimarket Tušanj Tuzla",
+      "040": "Minimarket Tuzlanka Tuzla",
+      "041": "Supermarket Zlokovac Tuzla",
+      "042": "Minimarket Mostar",
+      "043": "OBJEKAT NE POSTOJI",
+      "044": "Robna Kuća Kalesija",
+      "045": "Hipermarket Bosanska Krupa",
+      "046": "Hipermarket Kladanj",
+      "047": "Minimarket Markale",
+      "048": "OBJEKAT NE POSTOJI",
+      "049": "Tržni Centar Breza",
+      "050": "Minimarket Vozuća",
+      "051": "OBJEKAT NE POSTOJI",
+      "052": "Supermarket Stupine B10 Tuzla",
+      "053": "Tržni Centar Čitluk",
+      "054": "Supermarket Olovske Luke",
+      "055": "Minimarket Batva/Rudarska Tuzla",
+      "056": "Supermarket Slavinovići Tuzla",
+      "057": "Hipermarket Otoka Sarajevo",
+      "058": "Hipermarket Ilijaš",
+      "059": "Hipermarket Velika Kladuša",
+      "060": "Tržni Centar Bihać",
+      "061": "OBJEKAT NE POSTOJI",
+      "062": "Minimarket Stupine 2 Tuzla",
+      "063": "Minimarket Slatina Best Tuzla",
+      "064": "Hipermarket Zenica",
+      "065": "OBJEKAT NE POSTOJI",
+      "066": "Minimarket Partizan Tuzla",
+      "067": "Supermarket Prnjavor",
+      "068": "Minimarket Lukavac",
+      "069": "OBJEKAT NE POSTOJI",
+      "070": "OBJEKAT NE POSTOJI",
+      "071": "Salon Namještaja Šićki",
+      "072": "Minimarket Živinice",
+      "073": "Minimarket Tinja",
+      "074": "Minimarket Špionica",
+      "075": "Hipermarket Visoko",
+      "076": "OBJEKAT NE POSTOJI",
+      "077": "Supermarket Busovača",
+      "078": "Hipermarket Travnik",
+      "079": "Minimarket Novi Grad Dobrinja Sarrajevo",
+      "080": "OBJEKAT NE POSTOJI",
+      "081": "Supermarket Čelić",
+      "082": "Minimarket Gornje Živinice",
+      "083": "Minimarket Gornja Tuzla",
+      "084": "Minimarket Miladije Tuzla",
+      "085": "Hipermarket Doboj-Jug",
+      "086": "Supermarket Kakanj",
+      "087": "Supermarket Alipašino Sarajevo",
+      "088": "Hipermarket Prijedor",
+      "089": "Hipermarket Sjenjak",
+      "090": "Minimarket Srebrenik",
+      "091": "Supermarket Ciglane",
+      "092": "Hipermarket Modriča",
+      "093": "Minimarket Lukavac",
+      "094": "Minimarket Zenica",
+      "095": "OBJEKAT NE POSTOJI",
+      "096": "Minimarket Dobrnja",
+      "097": "Minimarket Mosnik Tuzla",
+      "098": "Minimarket Mramor",
+      "099": "Hipermarket Cazin",
+      "100": "OBJEKAT NE POSTOJI",
+      "101": "OBJEKAT NE POSTOJI",
+      "102": "OBJEKAT NE POSTOJI",
+      "103": "Hipermarket Karakaj Zvornik",
+      "104": "Minimarket Doboj 2",
+      "105": "Supermarket Grbavica Sarajevo",
+      "106": "Minimarket Sarajevo Centar",
+      "107": "Minimarket Solina Novo Naselje Tuzla",
+      "108": "Minimarket Kula Tuzla",
+      "109": "Supermarket Luke Sjenjak Tuzla",
+      "110": "Minimarket Buća Potok Sarajevo",
+      "111": "Minimarket Šićki",
+      "112": "Supermarket Stup Sarajevo",
+      "113": "Minimarket Dobrinja 3 Sarajevo",
+      "114": "Minimarket Hrasno Sarajevo",
+      "115": "Minimarket Suha Živinice",
+      "116": "Minimarket Hrasnica Ilidža",
+      "117": "Minimarket Boljakov Potok Sarajevo",
+      "118": "Minimarket Kozarac",
+      "119": "Supermarket Neum",
+      "120": "Minimarket Stup 2 Sarajevo",
+      "121": "Hipermarket Bugojno",
+      "122": "Hipermarket Bužim",
+      "123": "Hipermarket Goražde",
+      "124": "Minimarket Donje Dubrave",
+      "125": "OBJEKAT NE POSTOJI",
+      "126": "OBJEKAT NE POSTOJI",
+      "127": "Hipermarket Srebrenik 2",
+      "128": "Hipermarket Tešanj",
+      "129": "Supermarket Karađorđeva Teslić",
+      "130": "Supermarket Barići Teslić",
+      "131": "Supermarket Vrućica Teslić",
+      "132": "Minimarket Pijaca Teslić",
+      "133": "Hipermarket Stup",
+      "134": "OBJEKAT NE POSTOJI",
+      "135": "Hipermarket Brčko 2",
+      "136": "OBJEKAT NE POSTOJI",
+      "137": "Supermarket Visoko",
+      "138": "Hipermarket Mostar 2",
+      "139": "Supermarket Bijeljina 2",
+      "140": "Hipermarket Gradiška Interex",
+      "141": "Supermarket Goražde Interex",
+      "142": "Supermarket Kozarska Dubica",
+      "143": "Hipermarket Kolodvorska Sarajevo",
+      "144": "Hipermarket Orašje 2",
+      "145": "OBJEKAT NE POSTOJI",
+      "146": "Hipermarket Bihać 2 Interex",
+      "147": "Hipermarket Kiseljak",
+      "148": "Supermarket Sanski Most Interex",
+      "149": "OBJEKAT NE POSTOJI",
+      "150": "Hipermarket Trebinje",
+      "151": "Supermarket Gračanica",
+      "152": "Hipermarket Ušće Slavinovići Tuzla",
+      "153": "Hipermarket Konjic",
+      "154": "Supermarket Sarajevo 3 (Tuzlanska)",
+      "155": "Hipermarket Prijedor 2",
+      "156": "OBJEKAT NE POSTOJI",
+      "157": "Hipermarket Bulevar Plus Tuzla",
+      "158": "Minimarket Puračić",
+      "159": "OBJEKAT NE POSTOJI",
+      "160": "OBJEKAT NE POSTOJI",
+      "161": "Minimarket Sokolović Kolonija Sarajevo",
+      "162": "Hipermarket Bare Sarajevo",
+      "163": "Minimarket Kotorsko Doboj",
+      "164": "OBJEKAT NE POSTOJI",
+      "165": "Minimarket Zvornik",
+      "166": "Minimarket Janja",
+      "167": "Hipermarket Trebinje",
+      "168": "Minimarket Čekaluša Sarajevo",
+      "169": "Supermarket Prnjavor",
+      "170": "Hipermarket Ugljevik",
+      "171": "Supermarket Sanski Most",
+      "172": "Hipermarket Irac",
+      "173": "Hipermarket Mostar",
+      "174": "Hipermarket Istočno Sarajevo Lukavica",
+      "175": "Minimarket Litve Živinice",
+      "176": "Minimarket Teheranski Trg Sarajevo",
+      "177": "Minimarket Malta Sarajevo",
+      "178": "OBJEKAT NE POSTOJI",
+      "179": "OBJEKAT NE POSTOJI",
+      "180": "OBJEKAT NE POSTOJI",
+      "181": "OBJEKAT NE POSTOJI",
+      "182": "Minimarket Kolonija 2 Sarajevo",
+      "183": "Minimarket Dragodol Tuzla",
+      "184": "OBJEKAT NE POSTOJI",
+      "185": "OBJEKAT NE POSTOJI",
+      "186": "OBJEKAT NE POSTOJI",
+      "187": "OBJEKAT NE POSTOJI",
+      "188": "OBJEKAT NE POSTOJI",
+      "189": "OBJEKAT NE POSTOJI",
+      "190": "OBJEKAT NE POSTOJI",
+      "191": "OBJEKAT NE POSTOJI",
+      "192": "OBJEKAT NE POSTOJI",
+      "193": "OBJEKAT NE POSTOJI",
+      "194": "OBJEKAT NE POSTOJI",
+      "195": "OBJEKAT NE POSTOJI",
+      "196": "OBJEKAT NE POSTOJI",
+      "197": "OBJEKAT NE POSTOJI",
+      "198": "OBJEKAT NE POSTOJI",
+      "199": "OBJEKAT NE POSTOJI",
+      "200": "OBJEKAT NE POSTOJI",
+      "201": "OBJEKAT NE POSTOJI",
+      "202": "OBJEKAT NE POSTOJI",
+      "203": "OBJEKAT NE POSTOJI",
+      "204": "OBJEKAT NE POSTOJI",
+      "205": "Hipermarket Derventa",
+      "206": "Hipermarket Stup 2 Sarajevo",
+      "207": "Hipermarket Brčko 3",
+      "208": "Hipermarket Bosanski Petrovac",
+      "209": "Supermarket Teočak",
+      "210": "Hipermarket Vogošća",
+      "211": "Bingo City Centar TUZLA",
+      "212": "Hipermarket Bijeljina 3",
+      "213": "Hipermarket Otoka Merkur Sarajevo",
+      "214": "OBJEKAT NE POSTOJI",
+      "215": "OBJEKAT NE POSTOJI",
+      "216": "Hipermarket Zenica 3",
+      "217": "Hipermarket Donji Vakuf",
+      "218": "Supermarket Jablanica",
+      "219": "Supermarket Alta Sarajevo",
+      "220": "Hipermarket Zavidovići",
+      "221": "Supermarket Bugojno",
+      "222": "Hipermarket Šamac",
+      "223": "Hipermarket Jajce",
+      "224": "Hipermarket Ciljuge",
+      "225": "Supermarket Ozimice Bihać 1",
+      "226": "OBJEKAT NE POSTOJI",
+      "227": "Supermarket Bolnica Bihać",
+      "228": "Supermarket Kineski Zid Bihać",
+      "229": "Minimarket Ozimice Bihać 2",
+      "230": "OBJEKAT NE POSTOJI",
+      "231": "Hipermarket Bosanska Krupa 2",
+      "232": "Hipermarket Bihać 3",
+      "233": "Hipermarket Cazin 2",
+      "234": "Supermarket Velika Kladuša",
+      "235": "Minimarket Bosanska Krupa (Otoka) 1",
+      "236": "Minimarket Bosanska Krupa 2",
+      "237": "Minimarket Bosanska Krupa 3",
+      "238": "OBJEKAT NE POSTOJI",
+      "239": "Hipermarket Maglaj",
+      "240": "Minimarket Maglaj 1",
+      "241": "Minimarket Maglaj 2",
+      "242": "Minimarket Mostar 2",
+      "243": "Supermarket Ilidža",
+      "244": "Hipermarket Gornji Vakuf",
+      "245": "Minimarket Ugljevik",
+      "246": "Minimarket Mostar 3",
+      "247": "Bingo City Centar SARAJEVO",
+      "248": "Supermarket Donje Dubrave",
+      "249": "Minimarket Velika Brijesnica",
+      "250": "Minimarket Vogošća 2",
+      "251": "Hipermarket Kozarska Dubica",
+      "252": "Hipermarket Janja",
+      "253": "Minimarket Mostar 4",
+      "254": "Minimarket Mostar 5",
+      "255": "OBJEKAT NE POSTOJI",
+      "256": "Supermarket Olovo",
+      "257": "Hipermarket Ključ",
+      "258": "Supermarket Odžak",
+      "259": "Supermarket Jablanica 2",
+      "260": "Hipermarket Banovići",
+      "261": "OBJEKAT NE POSTOJI",
+      "262": "Supermarket Mostar",
+      "263": "Hipermarket Čelić",
+      "264": "Hipermarket Tojšići",
+      "265": "Hipermarket BanjaLuka",
+      "266": "Supermarket Kozluk",
+      "267": "Minimarket Jablanica",
+      "268": "Minimarket Zenica 2",
+      "269": "Supermarket Turbe",
+      "270": "Hipermarket Pecara Tuzla",
+      "271": "Hipermarket Grand Ilidža",
+      "272": "Minimarket Hrasnica Ilidža",
+      "273": "Supermarket Ćoralići Cazin",
+      "274": "Supermarket Mostar 3",
+      "275": "OBJEKAT NE POSTOJI",
+      "276": "Minimarket Kalesija 3",
+
+};
+
+
+
+const OBJECT_DATA = {
+   "002":{
+  os:"Windows Server 2019",
+  entitet:"FBIH",
+  model:"HPE ML30 Gen10",
+  ram:"16 GB",
+  kase:"4",
+  sql:"SQL 2016(13.1601.5)",
+  zamjena:"2021-09-28",
+
+  adresa:"Stupine B-12 Tuzla",
+  telefon:"035/368-814",
+  bingofon:"062-333-045"
+},
+
+
+ "003":{
+    os:"Windows Server 2019",
+    entitet:"FBIH",
+    model:"HPE ML350 Gen10",
+    ram:"32 GB",
+    kase:"5",
+    sql:"SQL 2016(13.0.1742.0)",
+    zamjena:"2020-05-18",
+
+  adresa:"Senada Mehdina Hodžića bb Kalesija",
+  telefon:"035/368-870",
+  bingofon:"062-333-039"
+
+  },
+
+"004":{
+    os:"Windows Server 2016",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen10",
+    ram:"16 GB",
+    kase:"2",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2019-08-20",
+
+  adresa:"Tojšići bb Tojšići",
+  telefon:"035/368-766",
+  bingofon:"062-348-699"
+
+  },
+
+"005":{
+    os:"Windows Server 2022",
+    entitet:"FBIH",
+    model:"HPE ML350 Gen11",
+    ram:"64 GB",
+    kase:"10",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2025-09-08",
+
+  adresa:"Šićki brod bb Tuzla ",
+  telefon:"035/368-949",
+  bingofon:"062-333-047"
+
+  },
+
+"006":{
+    os:"Windows Server 2022",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen11",
+    ram:"16 GB",
+    kase:"2",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2025-03-10",
+
+  adresa:"Rainci Gornji bb, Kalesija",
+  telefon:"035 368 740",
+  bingofon:"062-991-031"
+
+  },
+
+"007":{
+    os:"Windows Server 2016",
+    entitet:"FBIH",
+    model:"HPE ML350 Gen10",
+    ram:"32 GB",
+    kase:"8",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2019-09-04",
+
+  adresa:"Industrijska zona bb Hadžići",
+  telefon:"033/407-515",
+  bingofon:"062-993-714"
+
+  },
+
+"008":{
+    os:"Windows Server 2019",
+    entitet:"FBIH",
+    model:"HPE ML350 Gen10",
+    ram:"32 GB",
+    kase:"8",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2021-03-10",
+
+  adresa:"Zona poduzetništva bb Orašje",
+  telefon:"031 714-030",
+  bingofon:"062-333-040"
+
+  },
+
+"009":{
+    os:"Windows Server 2022",
+    entitet:"FBIH",
+    model:"HPE DL360 Gen11",
+    ram:"64",
+    kase:"10",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2025-12-09",
+
+  adresa:"Branilaca Kule grada bb Gračanica",
+  telefon:"035 368 861",
+  bingofon:"062-333-043"
+
+  },
+
+"010":{
+    os:"Windows Server 2025",
+    entitet:"FBIH",
+    model:"HPE DL20 Gen11",
+    ram:"32 GB",
+    kase:"8",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2026-01-23",
+
+  adresa:"Sarajevska bb Gradačac",
+  telefon:"035 368 944",
+  bingofon:"062-333-034"
+
+  },
+
+"012":{
+    os:"Windows Server 2012 R2",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen9",
+    ram:"16 GB",
+    kase:"2",
+    sql:"SQL 2008(10.50.1600)",
+    zamjena:"2017-08-01",
+
+  adresa:"206-te viteške brigade bb Sapna ",
+  telefon:"035-368-767",
+  bingofon:"061-173-964"
+
+  },
+
+"013":{
+    os:"Windows Server 2019",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen10",
+    ram:"16 GB",
+    kase:"1",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2022-02-10",
+
+  adresa:"Turalibegova 32 Tuzla",
+  telefon:"035 368 580",
+  bingofon:"062/419-336"
+
+  },
+
+"014":{
+    os:"Windows Server 2022",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen11",
+    ram:"32 GB",
+    kase:"6",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2025-10-03",
+
+  adresa:"Albina Herljevića br.11 Tuzla ",
+  telefon:"035 368 840",
+  bingofon:"062-333-046"
+
+  },
+
+"015":{
+    os:"Windows Server 2022",
+    entitet:"FBIH",
+    model:"HPE ML350 Gen10",
+    ram:"32 GB",
+    kase:"9",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2023-01-27",
+
+  adresa:"Lukavačkih brigada bb Lukavac",
+  telefon:"035 368 858 ",
+  bingofon:"062-333-042"
+
+  },
+
+"016":{
+    os:"Windows Server 2022",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen10",
+    ram:"24 GB",
+    kase:"3",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2024-09-26",
+
+  adresa:"Rose Hadživuković bb Tuzla",
+  telefon:"035 368 585",
+  bingofon:"062/421-539"
+
+  },
+
+"017":{
+    os:"Windows Server 2016",
+    entitet:"FBIH",
+    model:"HPE ML150 Gen9",
+    ram:"16 GB",
+    kase:"3",
+    sql:"SQL 2008(10.50.1600)",
+    zamjena:"2018-01-16",
+
+  adresa:"Derviša Imamovića br.1(Crkvice) Zenica",
+  telefon:"032 460 246",
+  bingofon:"061-199-072"
+
+  },
+
+"018":{
+    os:"Windows Server 2022",
+    entitet:"FBIH",
+    model:"HPE ML350 Gen10",
+    ram:"64 GB",
+    kase:"10",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2024-10-15",
+
+  adresa:"Put M-17 br 5 Mostar",
+  telefon:"036 281 404",
+  bingofon:"062-709-307"
+
+  },
+
+"020":{
+    os:"Windows Server 2016",
+    entitet:"FBIH",
+    model:"HPE ML10 Gen9",
+    ram:"8 GB",
+    kase:"2",
+    sql:"SQL 2008(10.50.1600)",
+    zamjena:"2018-10-23",
+
+  adresa:"Ismeta Mujezinovića D9 Tuzla",
+  telefon:"035 368-820",
+  bingofon:"062-336-031"
+
+  },
+
+"021":{
+    os:"Windows Server 2012 R2",
+    entitet:"FBIH",
+    model:"HPE ML10v2",
+    ram:"12 GB",
+    kase:"2",
+    sql:"SQL 2008(10.50.1600)",
+    zamjena:"2016-04-04",
+
+  adresa:"Rate Dugonjića do br.10 Tuzla",
+  telefon:"035 368-827",
+  bingofon:"062-336-029"
+
+  },
+
+"022":{
+    os:"Windows Server 2019",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen10",
+    ram:"16 GB",
+    kase:"3",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2021-01-07",
+
+  adresa:"Travnička cesta.bb ",
+  telefon:"032 460 271",
+  bingofon:"061-896-095"
+
+  },
+
+"024":{
+    os:"Windows Server 2019",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen10",
+    ram:"16 GB",
+    kase:"2",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2021-12-30",
+
+  adresa:"Banovići, Branilaca Banovića bb 75290",
+  telefon:"035 368-780 ",
+  bingofon:"062-333-044"
+
+  },
+
+"025":{
+    os:"Windows Server 2022",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen10+",
+    ram:"32 GB",
+    kase:"2",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2024-06-22",
+
+  adresa:"Tuzla, Armije BiH br.11, 75000",
+  telefon:"035 368-808",
+  bingofon:"062-336-030"
+
+  },
+
+"026":{
+    os:"Windows Server 2012 R2",
+    entitet:"FBIH",
+    model:"HPE ML10v2",
+    ram:"12 GB",
+    kase:"2",
+    sql:"SQL 2008(10.50.1600)",
+    zamjena:"2016-04-06",
+
+  adresa:"Tuzla, Ul.Rudarska 69, 75000",
+  telefon:"035 368-753",
+  bingofon:"062-336-032"
+
+  },
+
+"027":{
+    os:"Windows Server 2022",
+    entitet:"FBIH",
+    model:"HPE ML350 Gen10",
+    ram:"64 GB",
+    kase:"8",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2024-10-03",
+
+  adresa:"Srebrenik, Tuzlanskog odreda bb",
+  telefon:"035/368-866",
+  bingofon:"062-336-102"
+
+  },
+
+"028":{
+    os:"Windows Server 2019",
+    entitet:"FBIH",
+    model:"HPE ML350 Gen10",
+    ram:"32 GB",
+    kase:"10",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2021-07-16",
+
+  adresa:"Živinice, I Ulica br 121, 75270",
+  telefon:"035/368-862",
+  bingofon:"062/067-940"
+
+  },
+
+"029":{
+    os:"Windows Server 2019",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen10",
+    ram:"16 GB",
+    kase:"2",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2019-09-17",
+
+  adresa:"Banovići, Branilaca Banovića bb, 75290",
+  telefon:"035/368-770",
+  bingofon:"062-336-034"
+
+  },
+
+"031":{
+    os:"Windows Server 2022",
+    entitet:"RS",
+    model:"HPE ML350 Gen10",
+    ram:"32 GB",
+    kase:"8",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2022-08-11",
+
+  adresa:"Doboj,Cara Dušana 18",
+  telefon:"053/208-721",
+  bingofon:"062-598-110"
+
+  },
+
+"032":{
+    os:"Windows Server 2022",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen10+",
+    ram:"32 GB",
+    kase:"2",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2024-06-22",
+
+  adresa:"Hamdije Kapidžića 8 Dobrinja",
+  telefon:"033/407-509",
+  bingofon:"062/242-284"
+
+  },
+
+"033":{
+    os:"Windows Server 2022",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen10+",
+    ram:"32 GB",
+    kase:"1",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2024-03-22",
+
+  adresa:"Tuzla,Hasana i Derviša Sušića 1",
+  telefon:"035 368 582",
+  bingofon:"062/585-682"
+
+  },
+
+"035":{
+    os:"Windows Server 2022",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen10",
+    ram:"16 GB",
+    kase:"1",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2022-07-11",
+
+  adresa:"Tuzla,Kiseljak,Ševar bb",
+  telefon:"035/368-719",
+  bingofon:"062/059-618"
+
+  },
+
+"036":{
+    os:"Windows Server 2012 R2",
+    entitet:"FBIH",
+    model:"HPE ML10v2",
+    ram:"12 GB",
+    kase:"2",
+    sql:"SQL 2008(10.50.1600)",
+    zamjena:"2016-04-04",
+
+  adresa:"Tuzla,Lipnica, Ozrenskog odreda 46",
+  telefon:"035-368-749",
+  bingofon:"062-673-177"
+
+  },
+
+"037":{
+    os:"Windows Server 2019",
+    entitet:"Distrikt",
+    model:"HPE ML350 Gen10",
+    ram:"32 GB",
+    kase:"9",
+    sql:"SQL 2016(13.0.1742.0)",
+    zamjena:"2020-12-19",
+
+  adresa:"Brčko, Braće Ćuskića br.10, 76100",
+  telefon:"049/234-120",
+  bingofon:"062-333-041"
+
+  },
+
+"038":{
+    os:"Windows Server 2019",
+    entitet:"RS",
+    model:"HPE ML350 Gen10",
+    ram:"32 GB",
+    kase:"8",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2019-11-05",
+
+  adresa:"Bijeljina,Cara Uroša 54,76300",
+  telefon:"055 244 177",
+  bingofon:"062-790-834"
+
+  },
+
+"039":{
+    os:"Windows Server 2025",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen11",
+    ram:"32 GB",
+    kase:"2",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2025-03-11",
+
+  adresa:"Hasana Brkića bb, naselje Tušanj, Tuzla",
+  telefon:"035-368-717",
+  bingofon:"062-834-628"
+
+  },
+
+"040":{
+    os:"Windows Server 2025",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen10+",
+    ram:"24 GB",
+    kase:"2",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2026-04-16",
+
+  adresa:"Bosne Srebrene bb, Tuzla",
+  telefon:"035-368-761",
+  bingofon:"062-845-930"
+
+  },
+
+"041":{
+    os:"Windows Server 2016",
+    entitet:"FBIH",
+    model:"Dell PowerEdge T30",
+    ram:"16 GB",
+    kase:"3",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2019-06-14",
+
+  adresa:"Naselje Zlokovac bb, Tuzla",
+  telefon:"035 368 811",
+  bingofon:"062-857-516"
+
+  },
+
+"042":{
+    os:"Windows Server 2019",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen10",
+    ram:"16 GB",
+    kase:"2",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2020-07-21",
+
+  adresa:"Mostar, Kneza Višeslava bb  Mostar 88 000",
+  telefon:"036/320-313 ",
+  bingofon:"062-182-250"
+
+  },
+
+"044":{
+    os:"Windows Server 2019",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen10",
+    ram:"16 GB",
+    kase:"3",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2020-09-18",
+
+  adresa:"Patriotske lige br. 13 Kalesija ",
+  telefon:"035 368 745",
+  bingofon:"061-102-648"
+
+  },
+
+"045":{
+    os:"Windows Server 2019",
+    entitet:"FBIH",
+    model:"HPE ML350 Gen10",
+    ram:"32 GB",
+    kase:"6",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2020-05-28",
+
+  adresa:"Poslovna Zona bb Bosanska Krupa",
+  telefon:"037 316 411 ",
+  bingofon:"062-344-711"
+
+  },
+
+"046":{
+    os:"Windows Server 2025",
+    entitet:"FBIH",
+    model:"HPE ML350 Gen11",
+    ram:"64 GB",
+    kase:"6",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2026-05-05",
+
+  adresa:"Kladanj, 16. Muslim. brigade bb, 75280",
+  telefon:"035 368 871",
+  bingofon:"062-335-851"
+
+  },
+
+"047":{
+    os:"Windows Server 2019",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen10",
+    ram:"16 GB",
+    kase:"3",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2019-12-27",
+
+  adresa:"Ul Dženetića Čikme br. 1, Stari Grad",
+  telefon:"033/407-505",
+  bingofon:"061-145-933"
+
+  },
+
+"049":{
+    os:"Windows Server 2019",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen10",
+    ram:"32 GB",
+    kase:"6",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2022-01-28",
+
+  adresa:"Potkraj bb, 71 370 Breza",
+  telefon:"032 460 203",
+  bingofon:"061-948-671"
+
+  },
+
+"050":{
+    os:"Windows Server 2016",
+    entitet:"FBIH",
+    model:"Dell PowerEdge T30",
+    ram:"8 GB",
+    kase:"2",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2019-07-05",
+
+  adresa:"Vozuća bb, Zavidovići",
+  telefon:"032 850 090",
+  bingofon:"061-108-642"
+
+  },
+
+"052":{
+    os:"Windows Server 2012 R2",
+    entitet:"FBIH",
+    model:"HPE ML10v2",
+    ram:"12 GB",
+    kase:"4",
+    sql:"SQL 2008(10.50.1600)",
+    zamjena:"2016-04-06",
+
+  adresa:"Tuzla,Stupine B-10,75000",
+  telefon:"035 368-845",
+  bingofon:"061-272-259"
+
+  },
+
+"053":{
+    os:"Windows Server 2016",
+    entitet:"FBIH",
+    model:"HPE ML350 Gen10",
+    ram:"16 GB",
+    kase:"9",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2019-07-31",
+
+  adresa:"Gospodarska zona, Tromeđa bb Čitluk",
+  telefon:"036/281-400",
+  bingofon:"061-179-657"
+
+  },
+
+"054":{
+    os:"Windows Server 2022",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen10",
+    ram:"16 GB",
+    kase:"2",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2025-10-17",
+
+  adresa:"Olovske luke bb, 71340 Olovo",
+  telefon:"032 460 200",
+  bingofon:"061-197-062"
+
+  },
+
+"055":{
+    os:"Windows Server 2012 R2",
+    entitet:"FBIH",
+    model:"HPE ML10v2",
+    ram:"12 GB",
+    kase:"3",
+    sql:"SQL 2008(10.50.1600)",
+    zamjena:"2016-04-06",
+
+  adresa:"Tuzla, Rudarska br. 39 , 75000",
+  telefon:"035-368-755",
+  bingofon:"062/423-296"
+
+  },
+
+"056":{
+    os:"Windows Server 2022",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen10+",
+    ram:"32 GB",
+    kase:"3",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2024-05-28",
+
+  adresa:"Tuzla, Goste Lazarevića br.12 75000",
+  telefon:"035 368 825",
+  bingofon:"062/056-973"
+
+  },
+
+"057":{
+    os:"Windows Server 2019",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen10",
+    ram:"16 GB",
+    kase:"5",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2020-12-17",
+
+  adresa:"Ul. Džemala Bijedića br. 123, 71 000 Novi Grad Sarajevo",
+  telefon:"033 255 700",
+  bingofon:"061-197-096"
+
+  },
+
+"058":{
+    os:"Windows Server 2019",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen10",
+    ram:"16 GB",
+    kase:"5",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2022-06-27",
+
+  adresa:"Alića rampa , Mrakovo bb, 71 380 Ilijaš",
+  telefon:"033/586 660",
+  bingofon:"061-730-741"
+
+  },
+
+"059":{
+    os:"Windows Server 2019",
+    entitet:"FBIH",
+    model:"HPE ML350 Gen10",
+    ram:"32 GB",
+    kase:"6",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2020-05-26",
+
+  adresa:"1. maja bb,  77 230 Velika Kladuša",
+  telefon:"037 316 380",
+  bingofon:"061-108-316"
+
+  },
+
+"060":{
+    os:"Windows Server 2019",
+    entitet:"FBIH",
+    model:"HPE ML350 Gen10",
+    ram:"32 GB",
+    kase:"8",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2022-03-29",
+
+  adresa:"Žrtava srebreničkog genocida bb, Bihać",
+  telefon:"037/316 400 ",
+  bingofon:"061/206-652"
+
+  },
+
+"062":{
+    os:"Windows Server 2012 R2",
+    entitet:"FBIH",
+    model:"HPE ML10v2",
+    ram:"16 GB",
+    kase:"2",
+    sql:"SQL 2008(10.50.1600)",
+    zamjena:"2016-04-09",
+
+  adresa:"Tuzla, Maka Dizdara br.36, 75000",
+  telefon:"035 368 816 ",
+  bingofon:"062/396-134"
+
+  },
+
+"063":{
+    os:"Windows Server 2016",
+    entitet:"FBIH",
+    model:"HPE ML10 Gen9",
+    ram:"16 GB",
+    kase:"2",
+    sql:"SQL 2008(10.50.1600)",
+    zamjena:"2022-01-18",
+
+  adresa:"Tuzla, Slatina br.5, 75000",
+  telefon:"035 368 760",
+  bingofon:"062/298-545"
+
+  },
+
+"064":{
+    os:"Windows Server 2019",
+    entitet:"FBIH",
+    model:"HPE ML350 Gen10",
+    ram:"32 GB",
+    kase:"8",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2022-10-13",
+
+  adresa:"Zenica,Goraždanska br 23, 72000",
+  telefon:"032 460 190 ",
+  bingofon:"061-896-094"
+
+  },
+
+"066":{
+    os:"Windows Server 2019",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen10",
+    ram:"16 GB",
+    kase:"1",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2022-03-30",
+
+  adresa:"II Tuzlanske brigade 7,  75000 Tuzla",
+  telefon:"035 368 843",
+  bingofon:"062/067-267"
+
+  },
+
+"067":{
+    os:"Windows Server 2019",
+    entitet:"RS",
+    model:"HPE ML30 Gen10",
+    ram:"16 GB",
+    kase:"3",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2020-09-15",
+
+  adresa:"Beogradska bb, 78 430 Prnjavor",
+  telefon:"051 641 130",
+  bingofon:"061-485-791"
+
+  },
+
+"068":{
+    os:"Windows Server 2022",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen10",
+    ram:"16 GB",
+    kase:"2",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2024-09-11",
+
+  adresa:"Sarajevska br.7, Lukavac",
+  telefon:"035 368 733",
+  bingofon:"061-199-663"
+
+  },
+
+"071":{
+    os:"Windows Server 2012 R2",
+    entitet:"FBIH",
+    model:"HPE ML10v2",
+    ram:"12 GB",
+    kase:"3",
+    sql:"SQL 2008(10.50.1600)",
+    zamjena:"2016-02-03",
+
+  adresa:"Šićki Brod bb, 75 000 Tuzla",
+  telefon:"035 368 853",
+  bingofon:"062/333-047"
+
+  },
+
+"072":{
+    os:"Windows Server 2019",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen10",
+    ram:"16 GB",
+    kase:"2",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2020-04-24",
+
+  adresa:"Druga ulica Br. 15, Živinice",
+  telefon:"035-368-579",
+  bingofon:"062/059-751"
+
+  },
+
+"073":{
+    os:"Windows Server 2022",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen10+",
+    ram:"16 GB",
+    kase:"2",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2022-12-27",
+
+  adresa:"Tinja bb, Srebrenik",
+  telefon:"035-368-730",
+  bingofon:"062-346-323"
+
+  },
+
+"074":{
+    os:"Windows Server 2019",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen10",
+    ram:"16 GB",
+    kase:"1",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2019-11-11",
+
+  adresa:"Špionica bb, Srebrenik",
+  telefon:"035-368-722",
+  bingofon:"062-346-315"
+
+  },
+
+"075":{
+    os:"Windows Server 2025",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen11",
+    ram:"32 GB",
+    kase:"6",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2025-05-17",
+
+  adresa:"Kakanjska bb Visoko",
+  telefon:"032 460 280",
+  bingofon:"062-346-334"
+
+  },
+
+"077":{
+    os:"Windows Server 2019",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen10",
+    ram:"32 GB",
+    kase:"4",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2020-12-09",
+
+  adresa:"Zagrebačka bb Busovača TC Party",
+  telefon:"030 735 012",
+  bingofon:"062/089-276"
+
+  },
+
+"078":{
+    os:"Windows Server 2019",
+    entitet:"FBIH",
+    model:"HPE ML350 Gen10",
+    ram:"32 GB",
+    kase:"6",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2019-09-19",
+
+  adresa:"Aleja Konzula bb Travnik",
+  telefon:"030-509 110",
+  bingofon:"062-348-596"
+
+  },
+
+"079":{
+    os:"Windows Server 2022",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen10+",
+    ram:"32 GB",
+    kase:"2",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2023-10-25",
+
+  adresa:"Salke Lagumdžije 9 Novi Grad Sarajevo",
+  telefon:"033/586-350 ",
+  bingofon:"062-333-038"
+
+  },
+
+"081":{
+    os:"Windows Server 2012 R2",
+    entitet:"FBIH",
+    model:"HPE ML310e Gen8 v2",
+    ram:"12 GB",
+    kase:"2",
+    sql:"SQL 2008(10.50.1600)",
+    zamjena:"2017-08-10",
+
+  adresa:"Alije Izetbegovića 60 Čelić",
+  telefon:"035 368 723 ",
+  bingofon:"062/809-773"
+
+  },
+
+"082":{
+    os:"Windows Server 2019",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen10",
+    ram:"16 GB",
+    kase:"2",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2021-03-10",
+
+  adresa:"Gornje Živinice bb ",
+  telefon:"035 368 737",
+  bingofon:"061/206-787"
+
+  },
+
+"083":{
+    os:"Windows Server 2022",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen10+",
+    ram:"32 GB",
+    kase:"2",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2023-07-28",
+
+  adresa:"Trg oslobođenja br. 1. Gornja Tuzla",
+  telefon:"035 368 821",
+  bingofon:"061/726-354"
+
+  },
+
+"084":{
+    os:"Windows Server 2019",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen10",
+    ram:"16 GB",
+    kase:"2",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2020-09-14",
+
+  adresa:"Rade Uhlika 92 Tuzla",
+  telefon:"035 368 751",
+  bingofon:"062/629-023"
+
+  },
+
+"085":{
+    os:"Windows Server 2019",
+    entitet:"RS",
+    model:"HPE ML350 Gen10",
+    ram:"32 GB",
+    kase:"7",
+    sql:"SQL 2016(13.0.1742.0)",
+    zamjena:"2020-06-11",
+
+  adresa:"Matuzići bb Doboj JUG",
+  telefon:"032/460-226",
+  bingofon:"062-041-095"
+
+  },
+
+"086":{
+    os:"Windows Server 2019",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen10",
+    ram:"16 GB",
+    kase:"3",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2020-03-13",
+
+  adresa:"Alije Izetbegovića 37 Kakanj",
+  telefon:"032460235",
+  bingofon:"062-041-097"
+
+  },
+
+"087":{
+    os:"Windows Server 2019",
+    entitet:"FBIH",
+    model:"HPE ML350 Gen10",
+    ram:"32 GB",
+    kase:"6",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2020-07-27",
+
+  adresa:"Ive Andrića 13 (Alipašino polje) Sarajevo",
+  telefon:"033/407-525",
+  bingofon:"061-479-582"
+
+  },
+
+"088":{
+    os:"Windows Server 2025",
+    entitet:"RS",
+    model:"HPE DL360 Gen10",
+    ram:"64GB",
+    kase:"10",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2025-04-23",
+
+  adresa:"Svale bb Prijedor",
+  telefon:"052 239 261",
+  bingofon:"061-195-108"
+
+  },
+
+"089":{
+    os:"Windows Server 2019",
+    entitet:"FBIH",
+    model:"HPE ML350 Gen10",
+    ram:"32 GB",
+    kase:"7",
+    sql:"SQL 2016(13.0.1742.0)",
+    zamjena:"2020-02-19",
+
+  adresa:"Ismeta Mujezinovića bb Tuzla",
+  telefon:"035 368 850",
+  bingofon:"061-151-342"
+
+  },
+
+"090":{
+    os:"Windows Server 2019",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen10",
+    ram:"16 GB",
+    kase:"2",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2020-06-02",
+
+  adresa:"Maršala Tita 40 Srebrnik",
+  telefon:"035 368 727",
+  bingofon:"061-478-861"
+
+  },
+
+"091":{
+    os:"Windows Server 2022",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen11",
+    ram:"32 GB",
+    kase:"4",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2024-11-20",
+
+  adresa:"Mehremića trg br 15 (Ciglane) Sarajevo",
+  telefon:"033/407-500",
+  bingofon:"061-193-658"
+
+  },
+
+"092":{
+    os:"Windows Server 2012 R2",
+    entitet:"RS",
+    model:"HPE ML10 Gen9",
+    ram:"16 GB",
+    kase:"5",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2023-07-22",
+
+  adresa:"Šamački Put bb Modriča",
+  telefon:"053 821 001",
+  bingofon:"061-193-808"
+
+  },
+
+"093":{
+    os:"Windows Server 2016",
+    entitet:"FBIH",
+    model:"HPE ML10 Gen9",
+    ram:"16 GB",
+    kase:"2",
+    sql:"SQL 2008(10.50.1600)",
+    zamjena:"2018-06-06",
+
+  adresa:"Armije BiH bb Lukavac",
+  telefon:"035/368-735",
+  bingofon:"061-197-217"
+
+  },
+
+"094":{
+    os:"Windows Server 2019",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen10",
+    ram:"16 GB",
+    kase:"2",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2020-08-16",
+
+  adresa:"Ćire Truhelke br.8 Zenica",
+  telefon:"032/460-188",
+  bingofon:"061-789-681"
+
+  },
+
+"096":{
+    os:"Windows Server 2012 R2",
+    entitet:"FBIH",
+    model:"HPE ML10v2",
+    ram:"12 GB",
+    kase:"2",
+    sql:"SQL 2008(10.50.1600)",
+    zamjena:"2016-01-19",
+
+  adresa:"Dobrnja bb Tuzla",
+  telefon:"035 368 725",
+  bingofon:"061/189-921"
+
+  },
+
+"097":{
+    os:"Windows Server 2019",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen10",
+    ram:"16 GB",
+    kase:"2",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2021-08-18",
+
+  adresa:"Ismeta Kapetanovica br.2 Tuzla",
+  telefon:"035 368 763",
+  bingofon:"062/059-496"
+
+  },
+
+"098":{
+    os:"Windows Server 2016",
+    entitet:"FBIH",
+    model:"HPE ML10 Gen9",
+    ram:"8 GB",
+    kase:"2",
+    sql:"SQL 2008(10.50.1600)",
+    zamjena:"2018-08-07",
+
+  adresa:"Mramor bb Tuzla",
+  telefon:"035 368 731",
+  bingofon:"061/189-773"
+
+  },
+
+"099":{
+    os:"Windows Server 2022",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen11",
+    ram:"32 GB",
+    kase:"6",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2025-08-23",
+
+  adresa:"Žrtava Domovinskog rata bb Cazin",
+  telefon:"037 316 406",
+  bingofon:"061-898-434"
+
+  },
+
+"103":{
+    os:"Windows Server 2019",
+    entitet:"RS",
+    model:"HPE ML30 Gen10",
+    ram:"32 GB",
+    kase:"5",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2021-12-23",
+
+  adresa:"Karakaj 108 a Zvornik",
+  telefon:"056 991 913 ",
+  bingofon:"061-781-526"
+
+  },
+
+"104":{
+    os:"Windows Server 2022",
+    entitet:"RS",
+    model:"HPE ML30 Gen10+",
+    ram:"32 GB",
+    kase:"3",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2023-07-04",
+
+  adresa:"Svetog Save 77 Doboj",
+  telefon:"053 490 203 ",
+  bingofon:"061-785-198"
+
+  },
+
+"105":{
+    os:"Windows Server 2019",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen10",
+    ram:"16 GB",
+    kase:"3",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2021-06-03",
+
+  adresa:"Hasana Brkića 4 Grbavica Sarajevo",
+  telefon:"033 255 705",
+  bingofon:"061-173-583"
+
+  },
+
+"106":{
+    os:"Windows Server 2022",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen10",
+    ram:"16 GB",
+    kase:"2",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2022-05-11",
+
+  adresa:"Kranjčevićeva  23 Sarajevo",
+  telefon:"033 586 680",
+  bingofon:"061-789-291"
+
+  },
+
+"107":{
+    os:"Windows Server 2012 R2",
+    entitet:"FBIH",
+    model:"HPE ML10v2",
+    ram:"12 GB",
+    kase:"2",
+    sql:"SQL 2008(10.50.1600)",
+    zamjena:"2016-02-17",
+
+  adresa:"Rate Dugonjića br. 5 Tuzla",
+  telefon:"035-368-991",
+  bingofon:"062/059-635"
+
+  },
+
+"108":{
+    os:"Windows Server 2016",
+    entitet:"FBIH",
+    model:"HPE ML10 Gen9",
+    ram:"16 GB",
+    kase:"1",
+    sql:"SQL 2008(10.50.1600)",
+    zamjena:"2018-05-28",
+
+  adresa:"16. Muslimanske brigade br. 2 Tuzla",
+  telefon:"035 368 988",
+  bingofon:"062/623-052"
+
+  },
+
+"109":{
+    os:"Windows Server 2022",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen10+",
+    ram:"16 GB",
+    kase:"4",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2022-10-05",
+
+  adresa:"Branilaca BiH 11 Tuzla",
+  telefon:"035/368-711",
+  bingofon:"061-750-117"
+
+  },
+
+"110":{
+    os:"Windows Server 2022",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen11",
+    ram:"32 GB",
+    kase:"2",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2025-11-05",
+
+  adresa:"Adema Buće br. 24 Sarajevo",
+  telefon:"033 586 677",
+  bingofon:"061-792-479"
+
+  },
+
+"111":{
+    os:"Windows Server 2016",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen9",
+    ram:"16 GB",
+    kase:"1",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2019-06-28",
+
+  adresa:"Vjekoslava Tunjića bb Tuzla",
+  telefon:"035 368 715 ",
+  bingofon:"061/163-125"
+
+  },
+
+"112":{
+    os:"Windows Server 2022",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen10+",
+    ram:"32GB",
+    kase:"4",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2022-12-17",
+
+  adresa:"Stupska bb, Ilidža, Sarajevo",
+  telefon:"033 586 691",
+  bingofon:"061-147-879"
+
+  },
+
+"113":{
+    os:"Windows Server 2025",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen11",
+    ram:"32 GB",
+    kase:"2",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2026-01-21",
+
+  adresa:"Trg Sar. olimpijade 13, Sarajevo, N. Grad",
+  telefon:"033 255 477 ",
+  bingofon:"061-756-341"
+
+  },
+
+"114":{
+    os:"Windows Server 2012 R2",
+    entitet:"FBIH",
+    model:"HPE ML310e Gen8 v2",
+    ram:"12 GB",
+    kase:"2",
+    sql:"SQL 2008(10.50.1600)",
+    zamjena:"2015-05-19",
+
+  adresa:"Aleja lipa bb Hrasno Novo Sarajevo",
+  telefon:"033/407-511",
+  bingofon:"061/103-245"
+
+  },
+
+"115":{
+    os:"Windows Server 2022",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen10+",
+    ram:"16 GB",
+    kase:"2",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2022-08-10",
+
+  adresa:"Suha bb, Živinice",
+  telefon:"035 368 794",
+  bingofon:"061-133-102"
+
+  },
+
+"116":{
+    os:"Windows Server 2025",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen11",
+    ram:"32 GB",
+    kase:"2",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2025-12-08",
+
+  adresa:"Šehitluci 16-18, Hrasnica , Sarajevo",
+  telefon:"033/255-712 ",
+  bingofon:"061-271-645"
+
+  },
+
+"117":{
+    os:"Windows Server 2025",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen11",
+    ram:"32 GB",
+    kase:"2",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2026-02-03",
+
+  adresa:"Smaila Šikala br.6, Novi Grad, Sarajevo",
+  telefon:"033/586-519",
+  bingofon:"061-271-723"
+
+  },
+
+"118":{
+    os:"Windows Server 2012 R2",
+    entitet:"RS",
+    model:"HPE ML310e Gen8 v2",
+    ram:"12 GB",
+    kase:"2",
+    sql:"SQL 2008(10.50.1600)",
+    zamjena:"2014-07-05",
+
+  adresa:"Mladena Stojakovića i Ahmeta Melkića bb Kozarac",
+  telefon:"052/346-091 ",
+  bingofon:"061-796-359"
+
+  },
+
+"119":{
+    os:"Windows Server 2022",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen10+",
+    ram:"32 GB",
+    kase:"3",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2023-07-31",
+
+  adresa:"Svetog Ante bb, Neum",
+  telefon:"036/885-050",
+  bingofon:"061-796-652"
+
+  },
+
+"120":{
+    os:"Windows Server 2025",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen11",
+    ram:"32 GB",
+    kase:"2",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2026-02-03",
+
+  adresa:"Silve Rizvanbegović br.32, Ilidža",
+  telefon:"033/255-709",
+  bingofon:"061-143-595"
+
+  },
+
+"121":{
+    os:"Windows Server 2022",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen11",
+    ram:"32 GB",
+    kase:"8",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2025-03-04",
+
+  adresa:"Ciglane I bb, Bugojno",
+  telefon:"030/509-010",
+  bingofon:"061-756-386"
+
+  },
+
+"122":{
+    os:"Windows Server 2019",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen10",
+    ram:"16 GB",
+    kase:"5",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2021-01-21",
+
+  adresa:"Generala Izeta Nanića bb Bužim",
+  telefon:"037/316-440",
+  bingofon:"062/648-707"
+
+  },
+
+"123":{
+    os:"Windows Server 2019",
+    entitet:"FBIH",
+    model:"HPE ML350 Gen10",
+    ram:"32 GB",
+    kase:"8",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2022-02-14",
+
+  adresa:"Rasadnik bb Goražde",
+  telefon:"038/243-350",
+  bingofon:"061/491-048"
+
+  },
+
+"124":{
+    os:"Windows Server 2012 R2",
+    entitet:"FBIH",
+    model:"HPE ML310e Gen8 v2",
+    ram:"12 GB",
+    kase:"2",
+    sql:"SQL 2008(10.50.1600)",
+    zamjena:"2014-07-19",
+
+  adresa:"Dubrave Gornje bb, Živinice",
+  telefon:"035/368-692",
+  bingofon:"061-143-190"
+
+  },
+
+"127":{
+    os:"Windows Server 2019",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen10",
+    ram:"16 GB",
+    kase:"4",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2021-10-26",
+
+  adresa:"Teritorijalne odbrane 92 bb, Srebrenik",
+  telefon:"035/368-698",
+  bingofon:"061-143-654"
+
+  },
+
+"128":{
+    os:"Windows Server 2022",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen10+",
+    ram:"16 GB",
+    kase:"4",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2022-11-10",
+
+  adresa:"Industrijska zona Bukva bb, Tešanj",
+  telefon:"032/460-220",
+  bingofon:"061-271-847"
+
+  },
+
+"129":{
+    os:"Windows Server 2022",
+    entitet:"RS",
+    model:"HPE ML30 Gen10+",
+    ram:"32 GB",
+    kase:"3",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2023-09-06",
+
+  adresa:"Karađorđeva bb, 74 270  Teslić",
+  telefon:"053/490-205",
+  bingofon:"061-272-394"
+
+  },
+
+"130":{
+    os:"Windows Server 2019",
+    entitet:"RS",
+    model:"HPE ML30 Gen10",
+    ram:"16 GB",
+    kase:"3",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2021-08-12",
+
+  adresa:"Barić bb, Teslić",
+  telefon:"053/490-211",
+  bingofon:"061-271-949"
+
+  },
+
+"131":{
+    os:"Windows Server 2012 R2",
+    entitet:"RS",
+    model:"HPE ML310e Gen8 v2",
+    ram:"12 GB",
+    kase:"2",
+    sql:"SQL 2008(10.50.1600)",
+    zamjena:"2014-11-26",
+
+  adresa:"Banja Vrućica bb Teslić",
+  telefon:"053/490-216",
+  bingofon:"061-756-165"
+
+  },
+
+"132":{
+    os:"Windows Server 2012 R2",
+    entitet:"RS",
+    model:"HPE ML310e Gen8 v2",
+    ram:"12 GB",
+    kase:"2",
+    sql:"SQL 2008(10.50.1600)",
+    zamjena:"2014-10-13",
+
+  adresa:"Hilandarska bb, Teslić",
+  telefon:"053/490-221",
+  bingofon:"061-272-159"
+
+  },
+
+"135":{
+    os:"Windows Server 2019",
+    entitet:"Distrikt",
+    model:"HPE ML350 Gen10",
+    ram:"32 GB",
+    kase:"5",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2021-08-13",
+
+  adresa:"Bulevar mira br 5 , Brcko",
+  telefon:"049/490-230",
+  bingofon:"061-491-305"
+
+  },
+
+"137":{
+    os:"Windows Server 2022",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen11",
+    ram:"32 GB",
+    kase:"3",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2024-11-20",
+
+  adresa:"Arnautovicko polje  Podvanj bb , Visoko",
+  telefon:"032/460-283 ",
+  bingofon:"061-491-238"
+
+  },
+
+"138":{
+    os:"Windows Server 2022",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen10+",
+    ram:"32 GB",
+    kase:"5",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2024-07-23",
+
+  adresa:"Bišće polje bb, Mostar",
+  telefon:"036/281-422 ",
+  bingofon:"061-485-236"
+
+  },
+
+"139":{
+    os:"Windows Server 2022",
+    entitet:"RS",
+    model:"HPE ML30 Gen11",
+    ram:"32 GB",
+    kase:"4",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2025-07-10",
+
+  adresa:"Kralja Petra I Karađorđevića br.1 , Bijeljina",
+  telefon:"055/490-380",
+  bingofon:"061-491-237"
+
+  },
+
+"140":{
+    os:"Windows Server 2022",
+    entitet:"RS",
+    model:"HPE ML30 Gen11",
+    ram:"32 GB",
+    kase:"6",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2024-12-26",
+
+  adresa:"XVI Krajiške brigade bb, Gradiška",
+  telefon:"051/491-383 ",
+  bingofon:"061-491-154"
+
+  },
+
+"141":{
+    os:"Windows Server 2022",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen10+",
+    ram:"32 GB",
+    kase:"5",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2024-09-10",
+
+  adresa:"Ferida Dizdarevića br. 4 , Goražde",
+  telefon:"038/243-342 ",
+  bingofon:"061-103-052"
+
+  },
+
+"142":{
+    os:"Windows Server 2022",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen10+",
+    ram:"32 GB",
+    kase:"5",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2024-03-18",
+
+  adresa:"Kralja Petra I Oslobodioca bb, K. Dubica",
+  telefon:"052/490-208 ",
+  bingofon:"061-482-478"
+
+  },
+
+"143":{
+    os:"Windows Server 2016",
+    entitet:"FBIH",
+    model:"HPE ML350 Gen10",
+    ram:"32 GB",
+    kase:"10",
+    sql:"SQL 2016(13.0.1742.0)",
+    zamjena:"2019-08-28",
+
+  adresa:"Kolodvorska br .12 , Sarajevo",
+  telefon:"033/255-890 ",
+  bingofon:"061-491-153"
+
+  },
+
+"144":{
+    os:"Windows Server 2022",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen10",
+    ram:"32 GB",
+    kase:"4",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2025-03-12",
+
+  adresa:"VIII Ulica br 44  , Orasje",
+  telefon:"031/744-060",
+  bingofon:"061-491-253"
+
+  },
+
+"146":{
+    os:"Windows Server 2012 R2",
+    entitet:"FBIH",
+    model:"HPE ML350e Gen8 v2",
+    ram:"16 GB",
+    kase:"5",
+    sql:"SQL 2008(10.50.1600)",
+    zamjena:"2015-02-02",
+
+  adresa:"Žrtava srebreničkog genocida bb, Bihać",
+  telefon:"037/316-422",
+  bingofon:"061-485-127"
+
+  },
+
+"147":{
+    os:"Windows Server 2025",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen11",
+    ram:"32 GB",
+    kase:"4",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2025-10-18",
+
+  adresa:"Josipa Bana Jelačića bb, Kiseljak",
+  telefon:"030/719-062",
+  bingofon:"061-491-045"
+
+  },
+
+"148":{
+    os:"Windows Server 2012 R2",
+    entitet:"FBIH",
+    model:"HPE ML310e Gen8 v2",
+    ram:"12 GB",
+    kase:"4",
+    sql:"SQL 2008(10.50.1600)",
+    zamjena:"2015-01-28",
+
+  adresa:"Muse Ćazima Ćatića br. 24 , Sanski Most",
+  telefon:"037/316-430",
+  bingofon:"061-491-209"
+
+  },
+
+"150":{
+    os:"Windows Server 2019",
+    entitet:"RS",
+    model:"HPE ML350 Gen10",
+    ram:"32 GB",
+    kase:"4",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2020-07-20",
+
+  adresa:"Tini bb, Trebinje",
+  telefon:"059/490-380",
+  bingofon:"061-491-047"
+
+  },
+
+"151":{
+    os:"Windows Server 2025",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen11",
+    ram:"32 GB",
+    kase:"6",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2026-01-28",
+
+  adresa:"Gracanickih Gazija bb , Gracanica",
+  telefon:"035/369-577 ",
+  bingofon:"061-491-042"
+
+  },
+
+"152":{
+    os:"Windows Server 2022",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen10+",
+    ram:"32 GB",
+    kase:"4",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2022-12-01",
+
+  adresa:"Usce bb , Tuzla",
+  telefon:"035/369-570",
+  bingofon:"061-491-034"
+
+  },
+
+"153":{
+    os:"Windows Server 2022",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen10+",
+    ram:"32 GB",
+    kase:"6",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2023-06-09",
+
+  adresa:"Trg drzavnosti Alije Izetbegoovica , Konjic",
+  telefon:"036/281-430",
+  bingofon:"061-491-597"
+
+  },
+
+"154":{
+    os:"Windows Server 2022",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen10+",
+    ram:"32 GB",
+    kase:"4",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2025-07-03",
+
+  adresa:"Tuzlanska bb, Novi Grad, Sarajevo",
+  telefon:"033/255-915",
+  bingofon:"061-491-174"
+
+  },
+
+"155":{
+    os:"Windows Server 2019",
+    entitet:"RS",
+    model:"HPE ML350 Gen10",
+    ram:"32 GB",
+    kase:"5",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2022-06-08",
+
+  adresa:"Srpskih Velikana 14 Prijedor",
+  telefon:"052/490-200",
+  bingofon:"061/491-132"
+
+  },
+
+"157":{
+    os:"Windows Server 2022",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen10+",
+    ram:"32 GB",
+    kase:"5",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2024-08-18",
+
+  adresa:"Džemala Bijedića 1 Tuzla",
+  telefon:"035/368-555",
+  bingofon:"062/737-794"
+
+  },
+
+"158":{
+    os:"Windows Server 2022",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen10+",
+    ram:"16 GB",
+    kase:"2",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2022-08-15",
+
+  adresa:"Čaršijska bb Puračić ",
+  telefon:"035/368-560",
+  bingofon:"061/213-742"
+
+  },
+
+"161":{
+    os:"Windows Server 2022",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen10",
+    ram:"16 GB",
+    kase:"2",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2022-07-06",
+
+  adresa:"Trg 22 Aprila 8 Ilidža Sarajevo",
+  telefon:"033/407-530",
+  bingofon:"061/726-287"
+
+  },
+
+"162":{
+    os:"Windows Server 2022",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen11",
+    ram:"32 GB",
+    kase:"5",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2024-08-06",
+
+  adresa:"Alipašina bb Bare-Šip Sarajevo",
+  telefon:"033/255-920",
+  bingofon:"062/116-974"
+
+  },
+
+"163":{
+    os:"Windows Server 2012 R2",
+    entitet:"RS",
+    model:"HPE ML310e Gen8 v2",
+    ram:"12 GB",
+    kase:"2",
+    sql:"SQL 2008(10.50.1600)",
+    zamjena:"2015-05-29",
+
+  adresa:"Radnička bb Kotorsko Doboj",
+  telefon:"053/490-043",
+  bingofon:"061/140-432"
+
+  },
+
+"165":{
+    os:"Windows Server 2019",
+    entitet:"RS",
+    model:"HPE ML30 Gen10",
+    ram:"16 GB",
+    kase:"2",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2020-08-18",
+
+  adresa:"Trg Kralja Petra i Karađorđevića Zvornik",
+  telefon:"056/490-386",
+  bingofon:"061/726-498"
+
+  },
+
+"166":{
+    os:"Windows Server 2012 R2",
+    entitet:"RS",
+    model:"HPE ML310e Gen8 v2",
+    ram:"12 GB",
+    kase:"2",
+    sql:"SQL 2008(10.50.1600)",
+    zamjena:"2015-10-29",
+
+  adresa:"Karađorđeva 201 Janja",
+  telefon:"055/490-386",
+  bingofon:"061/206-846"
+
+  },
+
+"167":{
+    os:"Windows Server 2022",
+    entitet:"RS",
+    model:"HPE ML350 Gen11",
+    ram:"64 GB",
+    kase:"8",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2025-01-08",
+
+  adresa:"Zasad bb Trebinje",
+  telefon:"059/490-395",
+  bingofon:"062/445-809"
+
+  },
+
+"168":{
+    os:"Windows Server 2019",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen10",
+    ram:"16 GB",
+    kase:"3",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2021-10-26",
+
+  adresa:"Čekaluša 36 Centar Sarajevo",
+  telefon:"033-255-930",
+  bingofon:"061/181-346"
+
+  },
+
+"169":{
+    os:"Windows Server 2012 R2",
+    entitet:"RS",
+    model:"HPE ML10v2",
+    ram:"12 GB",
+    kase:"6",
+    sql:"SQL 2008(10.50.1600)",
+    zamjena:"2015-11-07",
+
+  adresa:"Magistralni put bb Prnjavor",
+  telefon:"051/491-350",
+  bingofon:"062/437-794"
+
+  },
+
+"170":{
+    os:"Windows Server 2012 R2",
+    entitet:"RS",
+    model:"HPE ML10v2",
+    ram:"24 GB",
+    kase:"6",
+    sql:"SQL 2008(10.50.1600)",
+    zamjena:"2015-10-29",
+
+  adresa:"Ugljevik 41 Ugljevik",
+  telefon:"055/490-369",
+  bingofon:"062/437-724"
+
+  },
+
+"171":{
+    os:"Windows Server 2022",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen10+",
+    ram:"32 GB",
+    kase:"6",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2024-09-25",
+
+  adresa:"XVII Viteške brigade bb Sanski Most",
+  telefon:"037/316-445",
+  bingofon:"062/435-030"
+
+  },
+
+"172":{
+    os:"Windows Server 2022",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen10",
+    ram:"32 GB",
+    kase:"7",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2024-11-01",
+
+  adresa:"Krečanska bb Tuzla",
+  telefon:"035/368-540",
+  bingofon:"062/179-198"
+
+  },
+
+"173":{
+    os:"Windows Server 2025",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen11",
+    ram:"32 GB",
+    kase:"6",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2025-10-18",
+
+  adresa:"Ante Starčevića bb Mostar",
+  telefon:"036/446-290",
+  bingofon:"062/737-830"
+
+  },
+
+"174":{
+    os:"Windows Server 2022",
+    entitet:"RS",
+    model:"HPE ML350 Gen11",
+    ram:"64 GB",
+    kase:"8",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2025-07-25",
+
+  adresa:"Vojvode Radomira Putnika bb Ist. Sarajevo",
+  telefon:"057/490-220",
+  bingofon:"062/186-228"
+
+  },
+
+"175":{
+    os:"Windows Server 2025",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen9",
+    ram:"16 GB",
+    kase:"2",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2026-04-09",
+
+  adresa:"Litve bb Banovići, Živiničke Ose bb",
+  telefon:"035/368-830",
+  bingofon:"062/437-082"
+
+  },
+
+"176":{
+    os:"Windows Server 2022",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen10",
+    ram:"32 GB",
+    kase:"2",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2023-12-25",
+
+  adresa:"Teheranski Trg 3 Novi grad Sarajevo",
+  telefon:"033/255-715",
+  bingofon:"062/728-360"
+
+  },
+
+"177":{
+    os:"Windows Server 2025",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen11",
+    ram:"32 GB",
+    kase:"2",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2026-03-09",
+
+  adresa:"Malta 27 Novo Sarajevo Sarajevo",
+  telefon:"033/407-540",
+  bingofon:"062/737-298"
+
+  },
+
+"182":{
+    os:"Windows Server 2019",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen10",
+    ram:"16 GB",
+    kase:"2",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2021-11-03",
+
+  adresa:"Huseina Đoze br. 3 Ilidža Sarajevo",
+  telefon:"033-255-931",
+  bingofon:"062/837-951"
+
+  },
+
+"183":{
+    os:"Windows Server 2022",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen10+",
+    ram:"32 GB",
+    kase:"2",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2025-09-04",
+
+  adresa:"Blagoja Parovića 17 (Dragodol 15)",
+  telefon:"035/367-600",
+  bingofon:"062/935-054"
+
+  },
+
+"205":{
+    os:"Windows Server 2025",
+    entitet:"RS",
+    model:"HPE ML110 Gen11",
+    ram:"64 GB",
+    kase:"5",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2026-03-27",
+
+  adresa:"Kninska bb Derventa",
+  telefon:"053-490-054",
+  bingofon:"062/963-908"
+
+  },
+
+"206":{
+    os:"Windows Server 2022",
+    entitet:"FBIH",
+    model:"HPE DL360 Gen11",
+    ram:"64",
+    kase:"19",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2025-08-28",
+
+  adresa:"Stupska bb Sarajevo",
+  telefon:"033/407-560",
+  bingofon:"062/668-297"
+
+  },
+
+"207":{
+    os:"Windows Server 2012 R2",
+    entitet:"Distrikt",
+    model:"HPE ML150 Gen9",
+    ram:"16 GB",
+    kase:"6",
+    sql:"SQL 2008(10.50.1600)",
+    zamjena:"2016-09-17",
+
+  adresa:"Desanke Maksimović bb Brčko ",
+  telefon:"049/580-902",
+  bingofon:"062/994-181"
+
+  },
+
+"208":{
+    os:"Windows Server 2012 R2",
+    entitet:"FBIH",
+    model:"HPE ML10v2",
+    ram:"12 GB",
+    kase:"5",
+    sql:"SQL 2008(10.50.1600)",
+    zamjena:"2016-09-24",
+
+  adresa:"Put V Korpusa 11 Bosanski Petrovac",
+  telefon:"037/316-455",
+  bingofon:"062/483-897"
+
+  },
+
+"209":{
+    os:"Windows Server 2012 R2",
+    entitet:"FBIH",
+    model:"HPE ML10 Gen9",
+    ram:"16 GB",
+    kase:"4",
+    sql:"SQL 2008(10.50.1600)",
+    zamjena:"2016-12-12",
+
+  adresa:"Krstac bb Teočak",
+  telefon:"035/368-511",
+  bingofon:"061/145-161"
+
+  },
+
+"210":{
+    os:"Windows Server 2019",
+    entitet:"FBIH",
+    model:"HPE ML350 Gen10",
+    ram:"32 GB",
+    kase:"7",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2021-09-21",
+
+  adresa:"Ugorsko bb Vogošća Sarajevo",
+  telefon:"033/407-570",
+  bingofon:"061/145-137"
+
+  },
+
+"211":{
+    os:"Windows Server 2022",
+    entitet:"FBIH",
+    model:"HPE ML350 Gen10",
+    ram:"32 GB",
+    kase:"10",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2023-10-20",
+
+  adresa:"Mitra Trifunovića bb Tuzla",
+  telefon:"035/368-500",
+  bingofon:"061/103-719"
+
+  },
+
+"212":{
+    os:"Windows Server 2019",
+    entitet:"RS",
+    model:"HPE ML30 Gen10",
+    ram:"24 GB",
+    kase:"6",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2021-11-12",
+
+  adresa:"ul. Stefana Dečanskog bb, Bijeljina",
+  telefon:"055/490-901",
+  bingofon:"061/496-551"
+
+  },
+
+"213":{
+    os:"Windows Server 2019",
+    entitet:"FBIH",
+    model:"HPE ML350 Gen10",
+    ram:"32 GB",
+    kase:"6",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2020-01-06",
+
+  adresa:"Gradačačka 1 Novi Grad Sarajevo",
+  telefon:"033/407-590",
+  bingofon:"061/726-237"
+
+  },
+
+"216":{
+    os:"Windows Server 2019",
+    entitet:"FBIH",
+    model:"HPE ML350 Gen10",
+    ram:"32 GB",
+    kase:"10",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2021-10-02",
+
+  adresa:"Džananović Centar- Čikme",
+  telefon:"032/460-180",
+  bingofon:"062/935-197"
+
+  },
+
+"217":{
+    os:"Windows Server 2016",
+    entitet:"FBIH",
+    model:"HPE ML150 Gen9",
+    ram:"16 GB",
+    kase:"10",
+    sql:"SQL 2008(10.50.1600)",
+    zamjena:"2018-02-16",
+
+  adresa:"707. Slavne Brdske Brigade",
+  telefon:"030/509-180",
+  bingofon:"061/103-269"
+
+  },
+
+"218":{
+    os:"Windows Server 2016",
+    entitet:"FBIH",
+    model:"HPE ML350 Gen10",
+    ram:"16 GB",
+    kase:"6",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2019-01-17",
+
+  adresa:"Jaroslava Černija bb",
+  telefon:"036/241-435",
+  bingofon:"061/956-875"
+
+  },
+
+"219":{
+    os:"Windows Server 2022",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen11",
+    ram:"32 GB",
+    kase:"5",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2025-08-08",
+
+  adresa:"Franca Lehara br.2",
+  telefon:"033/256-850",
+  bingofon:"061/819-779"
+
+  },
+
+"220":{
+    os:"Windows Server 2016",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen9",
+    ram:"16 GB",
+    kase:"5",
+    sql:"SQL 2008(10.50.1600)",
+    zamjena:"2018-10-17",
+
+  adresa:"Radnička Zavidovići",
+  telefon:"032/465-870",
+  bingofon:"061/140-194"
+
+  },
+
+"221":{
+    os:"Windows Server 2022",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen10+",
+    ram:"16 GB",
+    kase:"4",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2022-12-22",
+
+  adresa:"Ul. Ciglane I bb, Bugojno",
+  telefon:"030/509-930",
+  bingofon:"061/109-510"
+
+  },
+
+"222":{
+    os:"Windows Server 2016",
+    entitet:"RS",
+    model:"HPE ML150 Gen9",
+    ram:"16 GB",
+    kase:"9",
+    sql:"SQL 2008(10.50.1600)",
+    zamjena:"2018-05-07",
+
+  adresa:"Njegoševa bb Šamac",
+  telefon:"054/490-566",
+  bingofon:"061/160-276"
+
+  },
+
+"223":{
+    os:"Windows Server 2025",
+    entitet:"FBIH",
+    model:"HPE DL380 Gen10",
+    ram:"64GB",
+    kase:"9",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2025-03-18",
+
+  adresa:"Ul. Kralja Stjepana Tomaševića bb",
+  telefon:"030/509-275",
+  bingofon:"061/310-806"
+
+  },
+
+"224":{
+    os:"Windows Server 2016",
+    entitet:"FBIH",
+    model:"HPE ML10 Gen9",
+    ram:"16 GB",
+    kase:"4",
+    sql:"SQL 2008(10.50.1600)",
+    zamjena:"2018-06-16",
+
+  adresa:"Ciljuge II",
+  telefon:"035/367-615",
+  bingofon:"061/491-232"
+
+  },
+
+"225":{
+    os:"Windows Server 2022",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen10+",
+    ram:"32 GB",
+    kase:"3",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2023-02-17",
+
+  adresa:"Sarajevska (Ozimice 1 )",
+  telefon:"037/316-460",
+  bingofon:"062/345-462"
+
+  },
+
+"227":{
+    os:"Windows Server 2016",
+    entitet:"FBIH",
+    model:"HPE ML10 Gen9",
+    ram:"16 GB",
+    kase:"2",
+    sql:"SQL 2008(10.50.1600)",
+    zamjena:"2018-06-30",
+
+  adresa:"Darivalaca krvi 39 Bihać",
+  telefon:"037/316-464",
+  bingofon:"062/345-572"
+
+  },
+
+"228":{
+    os:"Windows Server 2016",
+    entitet:"FBIH",
+    model:"Dell PowerEdge T30",
+    ram:"8 GB",
+    kase:"3",
+    sql:"SQL 2008(10.50.1600)",
+    zamjena:"2018-06-26",
+
+  adresa:"Ešrefa Kovačevića bb (Harmani, Kineski zid )",
+  telefon:"037/316-471",
+  bingofon:"062/345-941"
+
+  },
+
+"229":{
+    os:"Windows Server 2016",
+    entitet:"FBIH",
+    model:"HPE ML10 Gen9",
+    ram:"16 GB",
+    kase:"2",
+    sql:"SQL 2008(10.50.1600)",
+    zamjena:"2018-07-02",
+
+  adresa:"Trg Zlatnih ljiljana bb (Ozimice 2 )",
+  telefon:"037/316-470",
+  bingofon:"061/215-548"
+
+  },
+
+"231":{
+    os:"Windows Server 2016",
+    entitet:"FBIH",
+    model:"HPE ML350 Gen10",
+    ram:"16 GB",
+    kase:"5",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2019-01-25",
+
+  adresa:"ul. Kolodvorska bb Krupa",
+  telefon:"037/316-578 ",
+  bingofon:"061/958-129"
+
+  },
+
+"232":{
+    os:"Windows Server 2016",
+    entitet:"FBIH",
+    model:"HPE ML350 Gen10",
+    ram:"32 GB",
+    kase:"7",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2019-01-23",
+
+  adresa:"Ul. Nositelja Hrvatskog Trolista bb ",
+  telefon:"037/316-550 ",
+  bingofon:"061/958-532"
+
+  },
+
+"233":{
+    os:"Windows Server 2016",
+    entitet:"FBIH",
+    model:"HPE ML350e Gen8 v2",
+    ram:"12 GB",
+    kase:"4",
+    sql:"SQL 2008(10.50.1600)",
+    zamjena:"2018-12-08",
+
+  adresa:"Ćuprija bb Cazin",
+  telefon:"037 /316-543",
+  bingofon:"061/958-262"
+
+  },
+
+"234":{
+    os:"Windows Server 2016",
+    entitet:"FBIH",
+    model:"Fujitsu TX1310 M3",
+    ram:"8 GB",
+    kase:"3",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2019-01-29",
+
+  adresa:"Zuhdije Žalića bb",
+  telefon:"037/316-684",
+  bingofon:"061/963-635"
+
+  },
+
+"235":{
+    os:"Windows Server 2016",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen9",
+    ram:"16 GB",
+    kase:"1",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2019-01-29",
+
+  adresa:"Čaršija bb, Bos.Otoka",
+  telefon:"037/316-569",
+  bingofon:"061/957-852"
+
+  },
+
+"236":{
+    os:"Windows Server 2016",
+    entitet:"FBIH",
+    model:"Fujitsu TX1310 M3",
+    ram:"8 GB",
+    kase:"1",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2019-01-29",
+
+  adresa:"Reisa Džemaludina Čauševića bb",
+  telefon:"037/316-575 ",
+  bingofon:"061/962-053"
+
+  },
+
+"237":{
+    os:"Windows Server 2022",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen10+",
+    ram:"16 GB",
+    kase:"2",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2022-09-19",
+
+  adresa:"ul. 511 SBBR bb Krupa",
+  telefon:"037/316-566 ",
+  bingofon:"061/962-705"
+
+  },
+
+
+"239":{
+    os:"Windows Server 2016",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen10",
+    ram:"32 GB",
+    kase:"10",
+    sql:"SQL 2016(13.0.1742.0)",
+    zamjena:"2019-05-22",
+
+  adresa:"Misurići bb",
+  telefon:"032/206-500",
+  bingofon:"061/982-791"
+
+  },
+
+"240":{
+    os:"Windows Server 2016",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen10",
+    ram:"8 GB",
+    kase:"2",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2019-08-19",
+
+  adresa:"Sulejmana Omerovića cara BB",
+  telefon:"032/206-520",
+  bingofon:"062/020-578"
+
+  },
+
+"241":{
+    os:"Windows Server 2016",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen10",
+    ram:"8 GB",
+    kase:"2",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2019-08-19",
+
+  adresa:"Viteška bb",
+  telefon:"032/206-513",
+  bingofon:"062/020-579"
+
+  },
+
+"242":{
+    os:"Windows Server 2016",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen10",
+    ram:"16 GB",
+    kase:"2",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2019-08-09",
+
+  adresa:"Splitska 27",
+  telefon:"036/446-080",
+  bingofon:"062/020-572"
+
+  },
+
+"243":{
+    os:"Windows Server 2019",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen10",
+    ram:"16 GB",
+    kase:"3",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2020-06-25",
+
+  adresa:"Ustanička 1, Ilidža",
+  telefon:"033/761-655",
+  bingofon:"061/927-947"
+
+  },
+
+"244":{
+    os:"Windows Server 2019",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen10",
+    ram:"16 GB",
+    kase:"6",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2019-10-21",
+
+  adresa:"Trnovača bb",
+  telefon:"030/509-660",
+  bingofon:"061/929-886"
+
+  },
+
+"245":{
+    os:"Windows Server 2019",
+    entitet:"RS",
+    model:"HPE ML30 Gen10",
+    ram:"16 GB",
+    kase:"2",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2019-10-21",
+
+  adresa:"Ul. Ćirila i Metodija 38a",
+  telefon:"055/490-990",
+  bingofon:"061/919-780"
+
+  },
+
+"246":{
+    os:"Windows Server 2019",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen10",
+    ram:"16 GB",
+    kase:"2",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2019-10-12",
+
+  adresa:"Dubrovačka br. 11",
+  telefon:"036/446-248",
+  bingofon:"061/929-776"
+
+  },
+
+"247":{
+    os:"Windows Server 2022",
+    entitet:"FBIH",
+    model:"HPE ML350 Gen11",
+    ram:"64 GB",
+    kase:"20",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2025-01-15",
+
+  adresa:"Džemala Bijedica 160a",
+  telefon:"033/788-170",
+  bingofon:"061/928-280"
+
+  },
+
+"248":{
+    os:"Windows Server 2019",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen10",
+    ram:"16 GB",
+    kase:"2",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2019-12-20",
+
+  adresa:"Dubrave donje bb",
+  telefon:"035/367-630",
+  bingofon:"061/969-760"
+
+  },
+
+"249":{
+    os:"Windows Server 2019",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen10",
+    ram:"16 GB",
+    kase:"2",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2020-01-09",
+
+  adresa:"M4 Velika Brijesnica",
+  telefon:"035/367-632",
+  bingofon:"061/981-627"
+
+  },
+
+"250":{
+    os:"Windows Server 2019",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen10",
+    ram:"16 GB",
+    kase:"2",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2020-10-06",
+
+  adresa:"Jošanička bb",
+  telefon:"033/ 255-478",
+  bingofon:"061/028-954"
+
+  },
+
+"251":{
+    os:"Windows Server 2019",
+    entitet:"RS",
+    model:"HPE ML350 Gen10",
+    ram:"32 GB",
+    kase:"5",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2020-09-18",
+
+  adresa:"Majora Milana Tepića bb",
+  telefon:"052/490-940",
+  bingofon:"061/029-766"
+
+  },
+
+"252":{
+    os:"Windows Server 2019",
+    entitet:"RS",
+    model:"HPE ML350 Gen10",
+    ram:"32 GB",
+    kase:"5",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2021-03-14",
+
+  adresa:"Bijeljinska 308b",
+  telefon:"055/991-940",
+  bingofon:"061/256-833"
+
+  },
+
+"253":{
+    os:"Windows Server 2019",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen10",
+    ram:"16 GB",
+    kase:"2",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2021-03-19",
+
+  adresa:"Biskupa Buconjića 48-b",
+  telefon:"036/397-122 ",
+  bingofon:"061/257-062 "
+
+  },
+
+"254":{
+    os:"Windows Server 2019",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen10",
+    ram:"16 GB",
+    kase:"2",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2021-03-22",
+
+  adresa:"Ul. Kneza Mislava bb",
+  telefon:"036/397-124",
+  bingofon:"061/257-226 "
+
+  },
+
+"256":{
+    os:"Windows Server 2019",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen10",
+    ram:"16 GB",
+    kase:"3",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2021-04-22",
+
+  adresa:"Branilaca grada  bb Olovo",
+  telefon:"032/206-807",
+  bingofon:"061/284-127"
+
+  },
+
+"257":{
+    os:"Windows Server 2019",
+    entitet:"FBIH",
+    model:"HPE ML350 Gen10",
+    ram:"32 GB",
+    kase:"5",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2021-04-22",
+
+  adresa:"Branilaca BiH bb Ključ",
+  telefon:"037/316-936",
+  bingofon:"061/284-181"
+
+  },
+
+"258":{
+    os:"Windows Server 2019",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen10",
+    ram:"16 GB",
+    kase:"4",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2021-04-13",
+
+  adresa:"Titova bb Odžak",
+  telefon:"031/511-700",
+  bingofon:"061/284-472"
+
+  },
+
+"259":{
+    os:"Windows Server 2019",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen10",
+    ram:"16 GB",
+    kase:"3",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2021-07-24",
+
+  adresa:"Željeznička bb Jablanica",
+  telefon:"036/281-585",
+  bingofon:"061/372-147"
+
+  },
+
+"260":{
+    os:"Windows Server 2019",
+    entitet:"FBIH",
+    model:"HPE ML350 Gen10",
+    ram:"32 GB",
+    kase:"8",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2021-11-05",
+
+  adresa:"Ul. Armije BiH br.8 Banovići",
+  telefon:"035/367-650",
+  bingofon:"061/496-251"
+
+  },
+
+"262":{
+    os:"Windows Server 2019",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen10",
+    ram:"16 GB",
+    kase:"3",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2021-12-16",
+
+  adresa:"Braće Fejića bb Mostar",
+  telefon:"036/281-650",
+  bingofon:"061/638-965"
+
+  },
+
+"263":{
+    os:"Windows Server 2022",
+    entitet:"FBIH",
+    model:"HPE ML350 Gen10",
+    ram:"32 GB",
+    kase:"5",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2022-05-12",
+
+  adresa:"Ekrema Agića bb Čelić",
+  telefon:"035/367-660",
+  bingofon:"062/660-807"
+
+  },
+
+"264":{
+    os:"Windows Server 2022",
+    entitet:"FBIH",
+    model:"HPE ML350 Gen10",
+    ram:"32 GB",
+    kase:"6",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2022-10-27",
+
+  adresa:"Tojšići bb, Kalesija",
+  telefon:"035/367-910",
+  bingofon:"061/163-072"
+
+  },
+
+"265":{
+    os:"Windows Server 2022",
+    entitet:"RS",
+    model:"HPE ML350 Gen10",
+    ram:"32 GB",
+    kase:"10",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2022-08-29",
+
+  adresa:"Branka Popovića bb Banja Luka",
+  telefon:"051/491-262",
+  bingofon:"061/491-058"
+
+  },
+
+"266":{
+    os:"Windows Server 2022",
+    entitet:"RS",
+    model:"HPE ML30 Gen10+",
+    ram:"32 GB",
+    kase:"3",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2023-08-14",
+
+  adresa:"ZVORNIK, Kozluk bb. ",
+  telefon:"056/991-920",
+  bingofon:"061/067-467"
+
+  },
+
+"267":{
+    os:"Windows Server 2022",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen10+",
+    ram:"32 GB",
+    kase:"2",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2023-10-23",
+
+  adresa:"Sulje Čilića broj 2, Jablanica",
+  telefon:"036/281-682",
+  bingofon:"061/238-883"
+
+  },
+
+"268":{
+    os:"Windows Server 2022",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen10+",
+    ram:"32 GB",
+    kase:"2",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2023-11-13",
+
+  adresa:"Zenica  Zavnobih 88, (Brist)",
+  telefon:"032/850-096",
+  bingofon:"061/244-217"
+
+  },
+
+"269":{
+    os:"Windows Server 2022",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen10+",
+    ram:"32 GB",
+    kase:"2",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2024-01-18",
+
+  adresa:"Ul. Bosanska, Turbe",
+  telefon:"030/510-663",
+  bingofon:"061/455-207"
+
+  },
+
+"270":{
+    os:"Windows Server 2022",
+    entitet:"FBIH",
+    model:"HPE ML350 Gen10",
+    ram:"48 GB",
+    kase:"7",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2024-05-20",
+
+  adresa:"Armije BiH bb, Tuzla",
+  telefon:"035/283-409",
+  bingofon:"061/790-327"
+
+  },
+
+"271":{
+    os:"Windows Server 2022",
+    entitet:"FBIH",
+    model:"HPE ML350 Gen10",
+    ram:"48 GB",
+    kase:"8",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2024-04-02",
+
+  adresa:"Butmirska cesta 14, Ilidža",
+  telefon:"033/554-826",
+  bingofon:"062/208-402"
+
+  },
+
+"272":{
+    os:"Windows Server 2022",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen10+",
+    ram:"32 GB",
+    kase:"3",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2024-06-13",
+
+  adresa:"Ul. Reisa ef. Hadžiomerovića 7a, Hrasnica",
+  telefon:"033/246-776",
+  bingofon:"061/804-251"
+
+  },
+
+"273":{
+    os:"Windows Server 2022",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen11",
+    ram:"32 GB",
+    kase:"3",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2024-12-05",
+
+  adresa:"Ćoralići bb, Cazin",
+  telefon:"",
+  bingofon:""
+
+  },
+
+"274":{
+    os:"Windows Server 2022",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen11",
+    ram:"32 GB",
+    kase:"3",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2025-07-12",
+
+  adresa:"",
+  telefon:"",
+  bingofon:""
+
+  },
+
+"276":{
+    os:"Windows Server 2025",
+    entitet:"FBIH",
+    model:"HPE ML30 Gen11",
+    ram:"32 GB",
+    kase:"2",
+    sql:"SQL 2016(13.1601.5)",
+    zamjena:"2026-01-29",
+
+  adresa:"Kalesija",
+  telefon:"",
+  bingofon:""
+
+  },
+
+
+
+};
+
+/* ===== STATE ===== */
+let isManagement=false;
+let currentObjectId=null;
+let navHistory=[]; // {type:'filter'|'home', filterType?, filterValue?}
+
+/* ===== SERVER DATA (WebDAV / dijeljeni JSON fajl) ===== */
+let serverData={edits:{},custom_objects:{}};
+const DATA_FILE='bg_data.json';
+
+async function loadServerData(){
+  try{
+    const res=await fetch(DATA_FILE+'?_='+Date.now(),{cache:'no-store'});
+    if(res.ok){
+      const d=await res.json();
+      serverData={edits:d.edits||{},custom_objects:d.custom_objects||{}};
+    }
+  }catch(e){
+    console.warn('bg_data.json nije mogao biti učitan:',e.message);
+  }
+}
+
+async function saveServerData(){
+  try{
+    const res=await fetch(DATA_FILE,{
+      method:'PUT',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(serverData,null,2)
+    });
+    if(!res.ok) throw new Error('HTTP '+res.status);
+  }catch(e){
+    // Fallback: ponudi download ako PUT ne radi
+    showSaveError(e.message);
+  }
+}
+
+function showSaveError(msg){
+  const blob=new Blob([JSON.stringify(serverData,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const confirmed=confirm(
+    '⚠️ Greška pri snimanju izmjena na server!\n\n'+
+    'WebDAV PUT nije uspio: '+msg+'\n\n'+
+    'Da bi izmjene bile vidljive svim korisnicima, potrebno je:\n'+
+    '1. Aktivirati WebDAV modul u IIS-u\n'+
+    '2. Dati Write dozvolu na direktorij\n\n'+
+    'Kliknite OK da preuzmete bg_data.json i ručno ga postavite\n'+
+    'pored HTML fajla na serveru.'
+  );
+  if(confirmed){
+    const a=document.createElement('a');
+    a.href=url; a.download='bg_data.json'; a.click();
+  }
+  setTimeout(()=>URL.revokeObjectURL(url),5000);
+}
+
+function loadEdits(){return serverData.edits;}
+function saveEdits(edits){serverData.edits=edits;saveServerData();}
+function getObjectData(id){
+  const base=OBJECT_DATA[id]?{...OBJECT_DATA[id]}:null;
+  if(!base) return null;
+  const edits=serverData.edits;
+  if(edits[id]) Object.assign(base,edits[id]);
+  return base;
+}
+
+/* ===== DOM ===== */
+const content=document.getElementById('content');
+const searchBox=document.getElementById('searchBox');
+const homeTop=document.getElementById('homeTop');
+const homeFloat=document.getElementById('homeFloat');
+const mgmtBtn=document.getElementById('mgmtBtn');
+const mgmtStatus=document.getElementById('mgmtStatus');
+const loginModal=document.getElementById('loginModal');
+const loginUser=document.getElementById('loginUser');
+const loginPass=document.getElementById('loginPass');
+const loginError=document.getElementById('loginError');
+const objCountEl=document.getElementById('objCount');
+objCountEl.textContent=Object.keys(OBJECT_DATA).length;
+
+homeTop.addEventListener('click',goHome);
+homeFloat.addEventListener('click',goHome);
+
+searchBox.addEventListener('input',e=>{
+  const digits=(e.target.value.match(/\d+/g)||[]).join('').slice(0,3);
+  if(digits.length===0){generateStats();return;}
+  if(digits.length<3) return;
+  showObject(pad3(digits));
+});
+window.addEventListener('load', async ()=>{
+  await loadServerData();
+  loadCustomObjects();
+  generateStats();
+});
+
+function goHome(){
+  searchBox.value='';
+  navHistory=[];
+  generateStats();
+  closeLightbox();
+  window.scrollTo({top:0,behavior:'smooth'});
+  homeFloat.style.display='none';
+}
+
+function goBack(){
+  if(navHistory.length===0){goHome();return;}
+  const prev=navHistory.pop();
+  if(prev.type==='filter'){
+    filterByStat(prev.filterType,prev.filterValue,false);
+  } else {
+    goHome();
+  }
+}
+
+/* ===== STATS ===== */
+function generateStats(){
+  currentObjectId=null;
+  const mc={},oc={},sc={},yc={};
+  for(const id in OBJECT_DATA){
+    const d=getObjectData(id);
+    mc[d.model]=(mc[d.model]||0)+1;
+    oc[d.os]=(oc[d.os]||0)+1;
+    sc[d.sql]=(sc[d.sql]||0)+1;
+    if(d.zamjena){
+      const zs=String(d.zamjena);
+      let y='—';
+      if(zs.includes('-')) y=zs.split('-')[0]; // YYYY-MM-DD
+      else if(zs.includes('.')) y=zs.split('.')[2]||'—'; // DD.MM.YYYY
+      if(y&&y!=='—') yc[y]=(yc[y]||0)+1;
+    }
+  }
+  const iS=`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="6" rx="1"/><rect x="2" y="15" width="20" height="6" rx="1"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>`;
+  const iO=`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>`;
+  const iQ=`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>`;
+  const iC=`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`;
+  content.className='anim-page';
+  setTimeout(()=>content.classList.remove('anim-page'),600);
+  content.innerHTML=`
+    <div style="margin-bottom:28px;position:relative;">
+      <div class="section-label">Geografska mapa objekata</div>
+      <div id="bh-map"></div>
+    </div>
+    <div class="section-label">Pregled infrastrukture</div>
+    <div class="stats-grid stat-grid-anim">
+      <div class="stat-card"><div class="stat-header"><div class="stat-header-icon">${iS}</div><div class="stat-title">Server modeli</div></div><div class="stat-list">${buildStatList(mc,'model')}</div></div>
+      <div class="stat-card"><div class="stat-header"><div class="stat-header-icon">${iO}</div><div class="stat-title">Windows Server verzije</div></div><div class="stat-list">${buildStatList(oc,'os')}</div></div>
+      <div class="stat-card"><div class="stat-header"><div class="stat-header-icon">${iQ}</div><div class="stat-title">SQL verzije</div></div><div class="stat-list">${buildStatList(sc,'sql')}</div></div>
+      <div class="stat-card"><div class="stat-header"><div class="stat-header-icon">${iC}</div><div class="stat-title">Godina zamjene servera</div></div><div class="stat-list">${buildStatList(yc,'zamjena')}</div></div>
+    </div>`;
+  setTimeout(initMap, 80);
+}
+function buildStatList(obj,type){
+  return Object.keys(obj).sort((a,b)=>type==='zamjena'?(Number(b)||0)-(Number(a)||0):String(a).localeCompare(String(b)))
+    .map(k=>`<div class="stat-item" onclick="filterByStat('${type}','${escapeHtml(k).replace(/'/g,"\\'")}')" ><div class="k">${escapeHtml(k)}</div><div class="v">${obj[k]}</div></div>`).join('');
+}
+
+/* ===== FILTER ===== */
+function filterByStat(type,value,pushHistory=true){
+  currentObjectId=null;
+  if(pushHistory) navHistory.push({type:'filter',filterType:type,filterValue:value});
+  const rows=[];
+  for(const id in OBJECT_DATA){
+    const d=getObjectData(id);
+    if(type==='zamjena'){if(String(d.zamjena||'').startsWith(String(value))) rows.push({id,name:OBJECT_NAMES[id]||'Nepoznat'});}
+    else{if(String(d[type]||'')===String(value)) rows.push({id,name:OBJECT_NAMES[id]||'Nepoznat'});}
+  }
+  rows.sort((a,b)=>a.id.localeCompare(b.id));
+  homeFloat.style.display='block';
+  content.className='anim-page';
+  setTimeout(()=>content.classList.remove('anim-page'),600);
+  content.innerHTML=`
+    <div class="page-header">
+      <div class="breadcrumb"><span class="breadcrumb-link" onclick="goHome()">Početna</span><span class="breadcrumb-sep">›</span><span class="breadcrumb-current">Filter: ${escapeHtml(value)}</span></div>
+      <button class="btn btn-ghost" onclick="goHome()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg> Početna</button>
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-header-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></div><div class="card-title">Rezultati (${rows.length})</div></div>
+      <table class="result-table"><thead><tr><th>Br.</th><th>Naziv objekta</th></tr></thead><tbody>
+        ${rows.map(r=>`<tr onclick="showObject('${r.id}')"><td>${r.id}</td><td>${escapeHtml(r.name)}</td></tr>`).join('')}
+      </tbody></table>
+    </div>`;
+}
+
+/* ===== OBJECT VIEW ===== */
+function mapsLink(a){return "https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(a);}
+function entitetBadge(e){
+  if(!e||e==='—') return `<span style="color:var(--text3)">—</span>`;
+  const cls=e==='FBIH'?'badge-fbih':e==='RS'?'badge-rs':'badge-dist';
+  return `<span class="badge ${cls}">${escapeHtml(e)}</span>`;
+}
+
+function showObject(id){
+  currentObjectId=id;
+  homeFloat.style.display='block';
+  const name=OBJECT_NAMES[id]||'Nepoznat objekat';
+  const d=getObjectData(id);
+  const fields=d?[
+    {key:'entitet',label:'Entitet',val:d.entitet||'—'},
+    {key:'os',label:'Operativni sistem',val:d.os||'—'},
+    {key:'model',label:'Model servera',val:d.model||'—'},
+    {key:'ram',label:'RAM memorija',val:d.ram||'—'},
+    {key:'kase',label:'Broj kasa',val:d.kase||'—'},
+    {key:'sql',label:'SQL verzija',val:d.sql||'—'},
+    {key:'zamjena',label:'Datum zamjene',val:formatDateDMY(d.zamjena||'')}
+  ]:[];
+
+  const infoRows=fields.map(f=>`
+    <div class="info-row" id="row-${f.key}">
+      <div class="info-label">${f.label}</div>
+      <div class="info-edit-wrap">
+        ${f.key==='entitet'
+          ?`<div class="info-value" id="val-${f.key}">${entitetBadge(f.val)}</div>`
+          :`<div class="info-value" id="val-${f.key}">${escapeHtml(f.val)}</div>`}
+        ${isManagement?`<button class="edit-toggle" onclick="toggleEdit('${id}','${f.key}')"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Edit</button>`:''}
+      </div>
+    </div>`).join('');
+
+  const contactHtml=d?`
+    <div class="obj-contact-wrap">
+      ${d.adresa?`<div class="obj-contact-row"><span class="obj-contact-label">Adresa</span><span class="obj-contact-val"><a href="${mapsLink(d.adresa)}" target="_blank">${escapeHtml(d.adresa)}</a></span></div>`:''}
+      ${d.telefon?`<div class="obj-contact-row"><span class="obj-contact-label">Telefon</span><span class="obj-contact-val">${escapeHtml(d.telefon)}</span></div>`:''}
+      ${d.bingofon?`<div class="obj-contact-row"><span class="obj-contact-label">Bingofon</span><span class="obj-contact-val">${escapeHtml(d.bingofon)}</span></div>`:''}
+    </div>`:'';
+
+  const saveSec=isManagement?`
+    <div class="save-section">
+      <button class="btn btn-save" onclick="saveObjectEdits('${id}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Sačuvaj izmjene</button>
+      <div class="save-indicator" id="saveIndicator"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Uspješno sačuvano</div>
+    </div>`:'';
+
+  content.className='anim-page';
+  setTimeout(()=>content.classList.remove('anim-page'),600);
+  const lastNav=navHistory.length>0?navHistory[navHistory.length-1]:null;
+  const backBtn=lastNav
+    ?`<button class="btn btn-ghost" onclick="goBack()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg> Nazad</button>`
+    :'';
+  content.innerHTML=`
+    <div class="page-header">
+      <div class="breadcrumb"><span class="breadcrumb-link" onclick="goHome()">Početna</span>${lastNav?`<span class="breadcrumb-sep">›</span><span class="breadcrumb-link" onclick="goBack()">${escapeHtml(lastNav.filterValue||'')}</span>`:''}<span class="breadcrumb-sep">›</span><span class="breadcrumb-current">${id} — ${escapeHtml(name)}</span></div>
+      <div style="display:flex;gap:8px;">${backBtn}<button class="btn btn-ghost" onclick="goHome()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg> Početna</button></div>
+    </div>
+    <div class="object-wrap">
+      <div class="card">
+        <div class="obj-identity"><div class="obj-number">${id}</div><div class="obj-name">${escapeHtml(name)}</div>${contactHtml}</div>
+        ${d?`<div class="info-section">${infoRows}</div>${saveSec}`:`<div class="card-body" style="color:var(--text3)">Nema podataka za ovaj objekat.</div>`}
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-header-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div><div class="card-title">Galerija fotografija</div></div>
+        <div class="gallery-grid" id="gallery"></div>
+      </div>
+    </div>`;
+  loadImagesFor(id);
+}
+
+/* ===== EDIT ===== */
+function toggleEdit(id,key){
+  const valEl=document.getElementById(`val-${key}`);
+  if(!valEl) return;
+  if(valEl.querySelector('input')){
+    const inp=valEl.querySelector('input');
+    const newVal=inp.value;
+    valEl.innerHTML=key==='entitet'?entitetBadge(newVal):escapeHtml(newVal);
+    valEl.className='info-value';
+    return;
+  }
+  // Za zamjena polje uzimamo raw ISO vrijednost iz podataka, ne formatirani prikaz
+  let rawVal;
+  if(key==='zamjena'){
+    const d=getObjectData(id);
+    rawVal=(d&&d.zamjena)||valEl.textContent.trim();
+  } else {
+    rawVal=valEl.textContent.trim();
+  }
+  valEl.innerHTML=`<input class="edit-field" id="ef-${key}" type="${key==='zamjena'?'date':'text'}" value="${rawVal.replace(/"/g,'&quot;')}" placeholder="${key}">`;
+  document.getElementById(`ef-${key}`)?.focus();
+}
+
+function saveObjectEdits(id){
+  const fields=['entitet','os','model','ram','kase','sql','zamjena'];
+  const edits=loadEdits();
+  if(!edits[id]) edits[id]={};
+  fields.forEach(key=>{
+    const valEl=document.getElementById(`val-${key}`);
+    if(!valEl) return;
+    const inp=valEl.querySelector('input');
+    if(inp){
+      let val=inp.value;
+      // Osiguraj da zamjena ostane u ISO formatu YYYY-MM-DD
+      if(key==='zamjena'&&val){
+        const dmyMatch=val.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
+        if(dmyMatch) val=`${dmyMatch[3]}-${dmyMatch[2].padStart(2,'0')}-${dmyMatch[1].padStart(2,'0')}`;
+      }
+      edits[id][key]=val;
+      valEl.innerHTML=key==='entitet'?entitetBadge(val):(key==='zamjena'?escapeHtml(formatDateDMY(val)):escapeHtml(val));
+      valEl.className='info-value';
+    } else {
+      const txt=valEl.textContent.trim();
+      if(txt&&txt!=='—') edits[id][key]=txt;
+    }
+  });
+  saveEdits(edits);
+  if(OBJECT_DATA[id]) Object.assign(OBJECT_DATA[id],edits[id]);
+  const indicator=document.getElementById('saveIndicator');
+  if(indicator){indicator.style.display='flex';setTimeout(()=>{indicator.style.display='none';},2500);}
+}
+
+/* ===== GALLERY ===== */
+function loadImagesFor(id){
+  const galleryEl=document.getElementById('gallery');
+  if(!galleryEl) return;
+  galleryEl.innerHTML='';
+  let count=0;
+  const letters=[];
+  for(let c=97;c<=122;c++) letters.push(String.fromCharCode(c));
+  letters.forEach(letter=>{
+    const url=`${id}${letter}.jpg`;
+    const img=new Image(); img.src=url;
+    img.onload=()=>{
+      count++;
+      const t=document.createElement('div'); t.className='thumb';
+      const im=document.createElement('img'); im.src=url; im.alt=id+letter;
+      const tag=document.createElement('div'); tag.className='thumb-tag'; tag.textContent=id+letter.toUpperCase();
+      t.appendChild(im); t.appendChild(tag);
+      im.addEventListener('click',()=>openLightbox(url));
+      galleryEl.appendChild(t);
+    };
+    img.onerror=()=>{};
+  });
+  setTimeout(()=>{if(count===0&&galleryEl.children.length===0) galleryEl.innerHTML='<div class="gallery-empty">Nema fotografija za ovaj objekat.</div>';},350);
+}
+
+/* ===== LIGHTBOX ===== */
+const lightbox=document.getElementById('lightbox');
+const lightImg=document.getElementById('lightImg');
+const closeLight=document.getElementById('closeLight');
+const zoomBtn=document.getElementById('zoomBtn');
+let zoomed=false;
+
+function openLightbox(src){
+  lightImg.src=src;
+  lightImg.style.width='';
+  lightImg.style.height='';
+  lightbox.classList.remove('lb-zoomed');
+  zoomed=false;
+  updateZoomBtn();
+  lightbox.style.display='flex';
+}
+function closeLightbox(){lightbox.style.display='none';lightbox.classList.remove('lb-zoomed');zoomed=false;}
+
+function applyZoom(){
+  if(zoomed){
+    const nat=lightImg.naturalWidth||800;
+    const nat2=lightImg.naturalHeight||600;
+    // Umjereni zum: prirodna veličina ili max 1.3x širine ekrana, ne više od 2x prirodne
+    const targetW=Math.min(Math.max(nat, window.innerWidth*1.3), nat*2);
+    const scale=targetW/nat;
+    lightImg.style.width=targetW+'px';
+    lightImg.style.height=(nat2*scale)+'px';
+    lightImg.style.cursor='grab';
+    lightbox.classList.add('lb-zoomed');
+    setTimeout(()=>{
+      const sl=(lightbox.scrollWidth-lightbox.clientWidth)/2;
+      const st=(lightbox.scrollHeight-lightbox.clientHeight)/2;
+      lightbox.scrollTo({left:sl,top:st,behavior:'smooth'});
+    },50);
+  } else {
+    lightImg.style.width='';
+    lightImg.style.height='';
+    lightImg.style.cursor='zoom-in';
+    lightbox.classList.remove('lb-zoomed');
+    lightbox.scrollTo({left:0,top:0});
+  }
+}
+function updateZoomBtn(){
+  const svgZoomOut=`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg>`;
+  const svgZoomIn=`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>`;
+  zoomBtn.innerHTML=zoomed?svgZoomOut+' Smanji':svgZoomIn+' Zum';
+}
+
+/* === Lightbox drag-to-pan + click-to-toggle zoom === */
+let lbDrag=false,lbDragX=0,lbDragY=0,lbScrX=0,lbScrY=0,lbMoved=false;
+
+lightImg.addEventListener('mousedown',e=>{
+  if(!zoomed){zoomed=true;applyZoom();updateZoomBtn();return;}
+  lbDrag=true; lbMoved=false;
+  lbDragX=e.clientX; lbDragY=e.clientY;
+  lbScrX=lightbox.scrollLeft; lbScrY=lightbox.scrollTop;
+  lightImg.style.cursor='grabbing';
+  e.preventDefault();
+});
+window.addEventListener('mousemove',e=>{
+  if(!lbDrag) return;
+  const dx=e.clientX-lbDragX, dy=e.clientY-lbDragY;
+  if(Math.abs(dx)>4||Math.abs(dy)>4) lbMoved=true;
+  lightbox.scrollLeft=lbScrX-dx;
+  lightbox.scrollTop=lbScrY-dy;
+});
+window.addEventListener('mouseup',()=>{
+  if(!lbDrag) return;
+  lbDrag=false;
+  lightImg.style.cursor=zoomed?'grab':'zoom-in';
+  if(!lbMoved){zoomed=false;applyZoom();updateZoomBtn();}
+});
+
+/* Touch pan */
+let lbTX=0,lbTY=0,lbTSX=0,lbTSY=0,lbTMoved=false;
+lightImg.addEventListener('touchstart',e=>{
+  if(!zoomed){zoomed=true;applyZoom();updateZoomBtn();return;}
+  lbTMoved=false;
+  lbTX=e.touches[0].clientX; lbTY=e.touches[0].clientY;
+  lbTSX=lightbox.scrollLeft; lbTSY=lightbox.scrollTop;
+},{passive:true});
+lightImg.addEventListener('touchmove',e=>{
+  if(!zoomed) return;
+  lbTMoved=true;
+  const dx=e.touches[0].clientX-lbTX, dy=e.touches[0].clientY-lbTY;
+  lightbox.scrollLeft=lbTSX-dx;
+  lightbox.scrollTop=lbTSY-dy;
+  e.preventDefault();
+},{passive:false});
+lightImg.addEventListener('touchend',()=>{
+  if(zoomed&&!lbTMoved){zoomed=false;applyZoom();updateZoomBtn();}
+});
+zoomBtn.addEventListener('click',()=>{zoomed=!zoomed;applyZoom();updateZoomBtn();});
+closeLight.addEventListener('click',closeLightbox);
+lightbox.addEventListener('click',e=>{if(e.target===lightbox) closeLightbox();});
+window.addEventListener('keydown',e=>{if(e.key==='Escape'&&lightbox.style.display==='flex') closeLightbox();});
+
+
+/* ===== MANAGEMENT AUTH ===== */
+mgmtBtn.addEventListener('click',()=>{
+  if(isManagement){
+    isManagement=false;
+    mgmtBtn.classList.remove('active');
+    mgmtStatus.classList.remove('visible');
+    mgmtBtn.innerHTML=`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg> Management`;
+    if(currentObjectId) showObject(currentObjectId); else generateStats();
+  } else {
+    loginUser.value='';loginPass.value='';loginError.style.display='none';
+    loginModal.classList.add('open');
+    setTimeout(()=>loginUser.focus(),50);
+  }
+});
+document.getElementById('loginCancel').addEventListener('click',()=>{loginModal.classList.remove('open');});
+document.getElementById('loginSubmit').addEventListener('click',attemptLogin);
+loginPass.addEventListener('keydown',e=>{if(e.key==='Enter') attemptLogin();});
+loginUser.addEventListener('keydown',e=>{if(e.key==='Enter') loginPass.focus();});
+loginModal.addEventListener('click',e=>{if(e.target===loginModal) loginModal.classList.remove('open');});
+
+function attemptLogin(){
+  if(loginUser.value.trim()==='Delman'&&loginPass.value==='Delman100499'){
+    loginModal.classList.remove('open');
+    isManagement=true;
+    mgmtBtn.classList.add('active');
+    mgmtStatus.classList.add('visible');
+    mgmtBtn.innerHTML=`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg> Odjavi se`;
+    if(currentObjectId) showObject(currentObjectId);
+  } else {
+    loginError.style.display='block';
+    loginPass.value='';loginPass.focus();
+  }
+}
+
+
+/* ===== LOAD CUSTOM OBJECTS (iz serverData) ===== */
+function loadCustomObjects(){
+  try {
+    const customs=serverData.custom_objects;
+    for(const id in customs){
+      const o=customs[id];
+      OBJECT_NAMES[id]=o.naziv||id;
+      OBJECT_DATA[id]={
+        os:o.os||'',entitet:o.entitet||'',model:o.model||'',
+        ram:o.ram||'',kase:o.kase||'',sql:o.sql||'',zamjena:o.zamjena||'',
+        adresa:o.adresa||'',telefon:o.telefon||'',bingofon:o.bingofon||''
+      };
+    }
+  } catch(e){}
+}
+// loadCustomObjects() se poziva u 'load' event handleru, nakon loadServerData()
+
+/* ===== ADD OBJECT MODAL ===== */
+const addObjModal=document.getElementById('addObjModal');
+const addObjBtn=document.getElementById('addObjBtn');
+const addObjCancel=document.getElementById('addObjCancel');
+const addAuthStep=document.getElementById('addAuthStep');
+const addFormStep=document.getElementById('addFormStep');
+const addObjFooter=document.getElementById('addObjFooter');
+let addObjAuthed=false;
+
+function openAddObjModal(){
+  addObjAuthed=isManagement; // ako je već ulogovan, preskočimo auth
+  document.getElementById('addAuthUser').value='';
+  document.getElementById('addAuthPass').value='';
+  document.getElementById('addAuthError').style.display='none';
+  document.getElementById('addFormError').style.display='none';
+  // Reset form fields
+  ['nBroj','nNaziv','nAdresa','nTelefon','nBingofon','nModel','nOs','nRam','nKase','nZamjena','nSql'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.value='';
+  });
+  document.getElementById('nEntitet').value='FBIH';
+  if(addObjAuthed){
+    addAuthStep.style.display='none';
+    addFormStep.style.display='block';
+    addObjFooter.innerHTML=`<button class="btn btn-ghost" id="addObjCancel2">Odustani</button><button class="btn btn-primary" id="addObjSave"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Sačuvaj objekat</button>`;
+    document.getElementById('addObjCancel2').addEventListener('click',closeAddObjModal);
+    document.getElementById('addObjSave').addEventListener('click',saveNewObject);
+  } else {
+    addAuthStep.style.display='block';
+    addFormStep.style.display='none';
+    addObjFooter.innerHTML=`<button class="btn btn-ghost" id="addObjCancel3">Odustani</button><button class="btn btn-primary" id="addObjAuth2"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Prijavi se</button>`;
+    document.getElementById('addObjCancel3').addEventListener('click',closeAddObjModal);
+    document.getElementById('addObjAuth2').addEventListener('click',attemptAddAuth);
+    setTimeout(()=>document.getElementById('addAuthUser').focus(),50);
+  }
+  addObjModal.classList.add('open');
+}
+
+function closeAddObjModal(){ addObjModal.classList.remove('open'); }
+
+function attemptAddAuth(){
+  const u=document.getElementById('addAuthUser').value.trim();
+  const p=document.getElementById('addAuthPass').value;
+  if(u==='Delman'&&p==='Delman100499'){
+    addObjAuthed=true;
+    addAuthStep.style.display='none';
+    addFormStep.style.display='block';
+    addObjFooter.innerHTML=`<button class="btn btn-ghost" id="addObjCancel4">Odustani</button><button class="btn btn-primary" id="addObjSave2"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Sačuvaj objekat</button>`;
+    document.getElementById('addObjCancel4').addEventListener('click',closeAddObjModal);
+    document.getElementById('addObjSave2').addEventListener('click',saveNewObject);
+    setTimeout(()=>document.getElementById('nBroj').focus(),50);
+  } else {
+    document.getElementById('addAuthError').style.display='block';
+    document.getElementById('addAuthPass').value='';
+    document.getElementById('addAuthPass').focus();
+  }
+}
+
+function saveNewObject(){
+  const broj=document.getElementById('nBroj').value.trim().replace(/\D/g,'').slice(0,3);
+  const naziv=document.getElementById('nNaziv').value.trim();
+  const errEl=document.getElementById('addFormError');
+  if(!broj||!naziv){ errEl.style.display='block'; return; }
+  errEl.style.display='none';
+  const id=pad3(broj);
+  const obj={
+    naziv,
+    entitet:document.getElementById('nEntitet').value,
+    adresa:document.getElementById('nAdresa').value.trim(),
+    telefon:document.getElementById('nTelefon').value.trim(),
+    bingofon:document.getElementById('nBingofon').value.trim(),
+    model:document.getElementById('nModel').value.trim(),
+    os:document.getElementById('nOs').value.trim(),
+    ram:document.getElementById('nRam').value.trim(),
+    kase:document.getElementById('nKase').value.trim(),
+    zamjena:document.getElementById('nZamjena').value,
+    sql:document.getElementById('nSql').value.trim()
+  };
+  // Persist na server
+  serverData.custom_objects[id]=obj;
+  saveServerData();
+  // Update in-memory
+  OBJECT_NAMES[id]=naziv;
+  OBJECT_DATA[id]={
+    os:obj.os,entitet:obj.entitet,model:obj.model,ram:obj.ram,
+    kase:obj.kase,sql:obj.sql,zamjena:obj.zamjena,
+    adresa:obj.adresa,telefon:obj.telefon,bingofon:obj.bingofon
+  };
+  // Update count
+  objCountEl.textContent=Object.keys(OBJECT_DATA).length;
+  closeAddObjModal();
+  showObject(id);
+}
+
+addObjBtn.addEventListener('click',openAddObjModal);
+addObjCancel.addEventListener('click',closeAddObjModal);
+document.getElementById('addObjAuth').addEventListener('click',attemptAddAuth);
+addObjModal.addEventListener('click',e=>{if(e.target===addObjModal) closeAddObjModal();});
+document.getElementById('addAuthPass').addEventListener('keydown',e=>{if(e.key==='Enter') attemptAddAuth();});
+document.getElementById('addAuthUser').addEventListener('keydown',e=>{if(e.key==='Enter') document.getElementById('addAuthPass').focus();});
+
+window.showObject=showObject;
+window.filterByStat=filterByStat;
+window.goHome=goHome;
+window.toggleEdit=toggleEdit;
+window.saveObjectEdits=saveObjectEdits;
+window.goBack=goBack;
+window.openAddObjModal=openAddObjModal;
+
+/* ===== MAP ===== */
+
+// ─────────────────────────────────────────────────────────────────────────────
+// KOORDINATE OBJEKATA  [lat, lng]
+// Možeš urediti bilo koju koordinatu direktno ovdje u kodu.
+// Format:  "ID": [geografska_širina, geografska_dužina],
+// Koordinate možeš pronaći na https://www.google.com/maps (desni klik → "What's here?")
+// ─────────────────────────────────────────────────────────────────────────────
+const OBJECT_COORDS = {
+  "002": [44.53093364343665, 18.69285485603431],  // Stupine B-12, Tuzla
+  "003": [44.437578860990676, 18.881245603200888],  // Kalesija centar
+  "004": [44.479850398177504, 18.787364933545557],  // Tojšići bb
+  "005": [44.5232416448655, 18.585683271376965],  // Šićki Brod, Tuzla
+  "006": [44.4666692076023, 18.816702991222844],  // Rainci Gornji, Kalesija
+  "007": [43.83169150745364, 18.212443026213336],  // Industrijska zona, Hadžići
+  "008": [45.01955057271727, 18.70111746265065],  // Zona poduzetništva, Orašje
+  "009": [44.688494628168016, 18.306805986885806],  // Branilaca Kule, Gračanica
+  "010": [44.89692616936916, 18.428031539717058],  // Sarajevska bb, Gradačac
+  "012": [44.49251602784287, 19.00262164767077],  // 206-te viteške brigade, Sapna
+  "013": [44.53656786647441, 18.678976547916353],  // Turalibegova 32, Tuzla centar
+  "014": [44.541138734713925, 18.66635179153708],  // Albina Herljevića 11, Tuzla (Slatina)
+  "015": [44.528763854165874, 18.526168756884637],  // Lukavačkih brigada, Lukavac
+  "016": [44.53470358452796, 18.695296917546873],  // Rose Hadživuković, Tuzla
+  "017": [44.198450431908206, 17.92113269655437],  // Derviša Imamovića 1 (Crkvice), Zenica
+  "018": [43.36505897270229, 17.823419781195962],  // Put M-17 br 5, Mostar
+  "020": [44.53328551325864, 18.699368571483586],  // Ismeta Mujezinovića D9 (Sjenjak), Tuzla
+  "021": [44.552353082962824, 18.692306588424227],  // Rate Dugonjića (Solina), Tuzla
+  "022": [44.199121870902644, 17.898145610512834],  // Travnička cesta, Zenica
+  "024": [44.407899660914424, 18.52888121550779],  // Branilaca Banovića, Banovići
+  "025": [44.53596666937965, 18.69716643100445],  // Armije BiH 11 (Skojevska), Tuzla
+  "026": [44.53610200095405, 18.653698996565673],  // Rudarska 69, Tuzla
+  "027": [44.695771852788354, 18.499966510637293],  // Tuzlanskog odreda, Srebrenik
+  "028": [44.45664474121925, 18.641973258531607],  // I Ulica 121, Živinice
+  "029": [44.41138284030342, 18.529861988156803],  // Branilaca Banovića (Zvjezdara), Banovići
+  "031": [44.727011632086274, 18.079215369011504],  // Cara Dušana 18, Doboj
+  "032": [43.82632427008279, 18.352682887313758],  // Hamdije Kapidžića 8, Dobrinja
+  "033": [44.527064694946006, 18.694997704637238],  // Hasana i Derviša Sušića 1, Tuzla
+  "035": [44.50062371097087, 18.579419596631535],  // Kiseljak/Ševar, Tuzla
+  "036": [44.565722788819016, 18.604064173282755],  // Lipnica/Ozrenskog odreda 46, Tuzla
+  "037": [44.86404001092922, 18.808861594035065],  // Braće Ćuskića 10, Brčko
+  "038": [44.76119672821653, 19.205163279640757],  // Cara Uroša 54, Bijeljina
+  "039": [44.54292168066723, 18.66405219483044],  // Hasana Brkića (Tušanj), Tuzla
+  "040": [44.53782325963905, 18.662234923758394],  // Bosne Srebrene, Tuzla
+  "041": [44.529723798738885, 18.6884789225487],  // Zlokovac, Tuzla
+  "042": [43.34994707063625, 17.804268715768515],  // Kneza Višeslava, Mostar
+  "044": [44.44319941632973, 18.874986871370723],  // Patriotske lige 13, Kalesija
+  "045": [44.894738031136576, 16.155256141999246],  // Poslovna Zona, Bosanska Krupa
+  "046": [44.22693124338215, 18.69577212072906],  // 16. Muslimanske brigade, Kladanj
+  "047": [43.85980373576123, 18.424410769925675],  // Dženetića Čikme 1, Stari Grad Sarajevo
+  "049": [44.001073927077016, 18.256290780521145],  // Potkraj bb, Breza
+  "050": [44.37976357655965, 18.358732080017973],  // Vozuća bb, Zavidovići
+  "052": [44.529786610710765, 18.694743559556773],  // Stupine B-10, Tuzla
+  "053": [43.20763457111649, 17.646408328001712],  // Tromeđa, Čitluk
+  "054": [44.12815692794939, 18.619248058735412],  // Olovske luke, Olovo
+  "055": [44.538715327956744, 18.657306699435185],  // Rudarska 39, Tuzla
+  "056": [44.529824279655685, 18.71431593533055],  // Goste Lazarevića 12 (Slavinovići), Tuzla
+  "057": [43.849943979432965, 18.36599426813878],  // Džemala Bijedića 123 (Otoka), Sarajevo
+  "058": [43.96261438424944, 18.26539871983764],  // Alića rampa/Mrakovo, Ilijaš
+  "059": [45.17835446916879, 15.811641153492204],  // 1. maja, Velika Kladuša
+  "060": [44.8197589280773, 15.85216452483051],  // Žrtava srebreničkog genocida, Bihać
+  "062": [44.530628095260916, 18.689541458826895],  // Maka Dizdara 36 (Stupine 2), Tuzla
+  "063": [44.54154040778892, 18.665078578467593],  // Slatina 5, Tuzla
+  "064": [44.192083494755195, 17.93776957388986],  // Goraždanska 23, Zenica
+  "066": [44.536605458023, 18.685576609375836],  // II Tuzlanske brigade 7, Tuzla
+  "067": [44.86529077901523, 17.66498459915621],  // Beogradska, Prnjavor
+  "068": [44.53623615366123, 18.529597924949144],  // Sarajevska 7, Lukavac
+  "071": [44.52265517330504, 18.585924902403182],  // Šićki Brod, Tuzla (Salon namještaja)
+  "072": [44.44178634095213, 18.655133778996927],  // Druga ulica 15, Živinice
+  "073": [44.63350008932137, 18.55601257799505],  // Tinja, Srebrenik
+  "074": [44.75794155099913, 18.484655366549468],  // Špionica, Srebrenik
+  "075": [44.00012062571142, 18.16213135781737],  // Kakanjska, Visoko
+  "077": [44.10010883510443, 17.88057982842018],  // Zagrebačka (TC Party), Busovača
+  "078": [44.22561328224212, 17.648299952420277],  // Aleja Konzula, Travnik
+  "079": [43.8296473954278, 18.344055654318538],  // Salke Lagumdžije 9, Novi Grad Sarajevo
+  "081": [44.721402657772, 18.820264746339816],  // Alije Izetbegovića 60, Čelić
+  "082": [44.44041086073318, 18.614296774749224],  // Gornje Živinice
+  "083": [44.55758296235935, 18.762670931100786],  // Trg oslobođenja 1, Gornja Tuzla
+  "084": [44.52929358554974, 18.643150592775747],  // Rade Uhlika 92, Tuzla
+  "085": [44.699020140928354, 18.05721567404113],  // Matuzići, Doboj Jug
+  "086": [44.12893735230742, 18.117958842628525],  // Alije Izetbegovića 37, Kakanj
+  "087": [43.84384139404018, 18.34838532266135],  // Ive Andrića 13 (Alipašino), Sarajevo
+  "088": [44.97651802075452, 16.728193457359954],  // Svale, Prijedor
+  "089": [44.532995769719776, 18.702743223866765],  // Ismeta Mujezinovića (Sjenjak Hiper), Tuzla
+  "090": [44.70321668378609, 18.492182604579376],  // Maršala Tita 40, Srebrenik
+  "091": [43.8654817508202, 18.409725717420777],  // Mehremića trg 15 (Ciglane), Sarajevo
+  "092": [44.96806541456325, 18.293565534201225],  // Šamački put, Modriča
+  "093": [44.53003119217929, 18.53722154501849],  // Armije BiH, Lukavac
+  "094": [44.19500993634243, 17.92979462307014],  // Ćire Truhelke 8, Zenica
+  "096": [44.579633807738226, 18.58319138605687],  // Dobrnja, Tuzla
+  "097": [44.53530356609818, 18.665276702441307],  // Mosnik, Tuzla
+  "098": [44.57427711000441, 18.563287989844465],  // Mramor, Tuzla
+  "099": [44.9659857987609, 15.923808649006451],  // Cazin
+  "103": [44.41881218665743, 19.12533251725405],  // Karakaj, Zvornik
+  "104": [44.727865556744646, 18.09067295670384],  // Doboj 2
+  "105": [43.849698727296776, 18.391659204624773],  // Grbavica, Sarajevo
+  "106": [43.85969636800016, 18.424833782438807],  // Sarajevo Centar (Markale)
+  "107": [44.55235795896694, 18.69229934424864],  // Solina Novo Naselje, Tuzla
+  "108": [44.53309257418377, 18.679575403095306],  // Kula, Tuzla
+  "109": [44.53141890838645, 18.70776274305368],  // Luke Sjenjak, Tuzla
+  "110": [43.85553136137532, 18.364950568557816],  // Buća Potok, Sarajevo
+  "111": [44.522306184838506, 18.593435982325694],  // Šićki, Tuzla
+  "112": [43.836411734143034, 18.330273591727934],  // Stup, Sarajevo
+  "113": [43.83149365473947, 18.34770762058567],  // Dobrinja 3, Sarajevo
+  "114": [43.850380418114334, 18.385145453628574],  // Hrasno, Sarajevo
+  "115": [44.46373040535627, 18.590679559637234],  // Suha, Živinice
+  "116": [43.813729344444894, 18.317133767695967],  // Hrasnica, Ilidža
+  "117": [43.85288997313362, 18.345220187381674],  // Boljakov Potok, Sarajevo
+  "118": [44.975871745239594, 16.844185443637254],  // Kozarac, Prijedor
+  "119": [42.925117696712725, 17.622314860712603],  // Neum
+  "120": [43.836889634119714, 18.32452604420701],  // Stup 2, Sarajevo
+  "121": [44.0546292555398, 17.43601933753798],  // Bugojno
+  "122": [45.06825687427667, 16.02374435035052],  // Bužim
+  "123": [43.659514319723115, 18.97540704184825],  // Goražde
+  "124": [44.484628113648434, 18.674188746518542],  // Donje Dubrave
+  "127": [44.707661850774365, 18.49052722063614],  // Srebrenik 2
+  "128": [44.62427462977469, 17.999212550068098],  // Tešanj
+  "129": [44.60322632413133, 17.8610777766678],  // Karađorđeva, Teslić
+  "130": [44.60434252573311, 17.839599005422688],  // Barići, Teslić
+  "131": [44.59151788681088, 17.873544231311282],  // Vrućica, Teslić
+  "132": [44.60682966274277, 17.85820076118728],  // Pijaca, Teslić
+  "133": [43.834900832483555, 18.327651984382722],  // Hipermarket Stup, Sarajevo
+  "135": [44.87639721198785, 18.81211789327346],  // Brčko 2
+  "137": [43.99844535963526, 18.169110928818633],  // Visoko 2
+  "138": [43.30569629595067, 17.831438179112578],  // Mostar 2
+  "139": [44.76266604067425, 19.182411990305226],  // Bijeljina 2
+  "140": [45.140198445082305, 17.257829311618107],  // Gradiška (Interex)
+  "141": [43.66411977218662, 18.976082798044246],  // Goražde (Interex)
+  "142": [45.174638687978565, 16.81355940263134],  // Kozarska Dubica
+  "143": [43.856344112799476, 18.38910975338376],  // Kolodvorska, Sarajevo
+  "144": [45.03203375513627, 18.692250541626006],  // Orašje 2
+  "146": [44.82270617653343, 15.85133526612739],  // Bihać 2 (Interex)
+  "147": [43.9347812678119, 18.084847710581695],  // Kiseljak
+  "148": [44.762867529491594, 16.672319862580157],  // Sanski Most (Interex)
+  "150": [42.704772071247156, 18.35067173488678],  // Trebinje
+  "151": [44.69073312628078, 18.300083912240073],  // Gračanica 2
+  "152": [44.53059943562137, 18.70677213281714],  // Ušće Slavinovići, Tuzla
+  "153": [43.655239766965174, 17.96226232940878],  // Konjic
+  "154": [43.85290885104429, 18.34521295541718],  // Tuzlanska, Sarajevo
+  "155": [44.97422890372462, 16.705168988309758],  // Prijedor 2
+  "157": [44.534068940207206, 18.691586178023936],  // Bulevar Plus, Tuzla
+  "158": [44.542461713664984, 18.47664052642866],  // Puračić
+  "161": [43.815193825823286, 18.31223459304834],  // Sokolović Kolonija, Sarajevo
+  "162": [43.87842791381912, 18.40277951510115],  // Bare, Sarajevo
+  "163": [44.82765448814769, 18.06705585505774],  // Kotorsko, Doboj
+  "165": [44.387385861024086, 19.1038591286474],  // Zvornik
+  "166": [44.663994332300454, 19.249292952079482],  // Janja
+  "167": [42.706143201466894, 18.339818033726164],  // Trebinje 2
+  "168": [43.862241683466955, 18.416983356462445],  // Čekaluša, Sarajevo
+  "169": [44.86531808573612, 17.66494639025688],  // Prnjavor 2
+  "170": [44.69549905959523, 18.991404208491886],  // Ugljevik
+  "171": [44.76999370649233, 16.657488381121247],  // Sanski Most
+  "172": [44.53714534974742, 18.65680282821531],  // Irac, Tuzla
+  "173": [43.35288134595531, 17.804574643196872],  // Mostar 3
+  "174": [43.823792259830306, 18.361743317952545],  // Istočno Sarajevo (Lukavica)
+  "175": [44.43562418828322, 18.650199200862065],  // Litve, Živinice
+  "176": [43.83992490365029, 18.34164940892968],  // Teheranski trg, Sarajevo
+  "177": [43.853597627678596, 18.377310872785888],  // Malta, Sarajevo
+  "182": [43.83195357203883, 18.307643607438333],  // Kolonija 2, Sarajevo
+  "183": [44.544433867614224, 18.662685128273242],  // Dragodol, Tuzla
+  "205": [44.98320006065537, 17.928436159017846],  // Derventa
+  "206": [43.83536983820196, 18.327354458080254],  // Stup 2, Sarajevo
+  "207": [44.87187830931086, 18.81862269392665],  // Brčko 3
+  "208": [44.54605731219837, 16.362453717759795],  // Bosanski Petrovac
+  "209": [44.60312069098283, 18.986438076299333],  // Teočak
+  "210": [43.89701674287786, 18.360329615520957],  // Vogošća
+  "211": [44.53193789900959, 18.65120051694944],  // Bingo City Centar, Tuzla
+  "212": [44.76269877923795, 19.182498132503436],  // Bijeljina 3
+  "213": [43.84827379632193, 18.368192731617604],  // Otoka Merkur, Sarajevo
+  "216": [44.20317832239633, 17.912348074190128],  // Zenica 3
+  "217": [44.14056258352582, 17.39295074071875],  // Donji Vakuf
+  "218": [43.660773643491176, 17.761823462981987],  // Jablanica
+  "219": [43.85636326324402, 18.40557330641861],  // Alta, Sarajevo
+  "220": [44.44465338613588, 18.15378187532949],  // Zavidovići
+  "221": [44.05562681654193, 17.449371290228886],  // Bugojno 2
+  "222": [45.05723553759097, 18.47636324209459],  // Šamac
+  "223": [44.341162399299, 17.263251193529413],  // Jajce
+  "224": [44.437485040527605, 18.67899962002376],  // Ciljuge (Zenica okolica)
+  "225": [44.81866359813923, 15.863457710523443],  // Ozimice 1, Bihać
+  "227": [44.8097327735211, 15.860205112255692],  // Bolnica, Bihać
+  "228": [44.810911622146286, 15.866713079223162],  // Kineski Zid, Bihać
+  "229": [44.81221005439285, 15.8595011531494],  // Ozimice 2, Bihać
+  "231": [44.88557811022864, 16.150251157889926],  // Bosanska Krupa 2
+  "232": [44.82233367281102, 15.863991706843677],  // Bihać 3
+  "233": [44.96563590181022, 15.920305179115907],  // Cazin 2
+  "234": [45.179903505880894, 15.809405737865491],  // Velika Kladuša
+  "235": [44.958954524271356, 16.18026561353149],  // Bosanska Krupa (Otoka) 1
+  "236": [44.88046483688858, 16.15680159239404],  // Bosanska Krupa 2
+  "237": [44.88080319894751, 16.15292926801426],  // Bosanska Krupa 3
+  "239": [44.552983839428116, 18.088694997898813],  // Maglaj
+  "240": [44.54782528215948, 18.09157066916652],  // Maglaj 1
+  "241": [44.5473006528378, 18.10060537061711],  // Maglaj 2
+  "242": [43.348186929065236, 17.80082840772811],  // Mostar 2 (Kneza Višeslava)
+  "243": [43.83192805947743, 18.307643547350146],  // Ilidža
+  "244": [43.94465854174216, 17.565204366742222],  // Gornji Vakuf
+  "245": [44.69166258085654, 18.99455716278126],  // Ugljevik 2
+  "246": [43.35043838809803, 17.794823377897302],  // Mostar 3
+  "247": [43.850181333953785, 18.35373633596663],  // Bingo City Centar, Sarajevo
+  "248": [44.4847408454053, 18.674188298315084],  // Donje Dubrave
+  "249": [44.72288376853116, 18.208140226095296],  // Velika Brijesnica
+  "250": [43.90005389850855, 18.345907992895523],  // Jošanička (Vogošća okolica)
+  "251": [45.186406395118354, 16.79284637126891],  // Kozarska Dubica 2
+  "252": [44.65413115087516, 19.24346520384406],  // Janja
+  "253": [43.33780096221306, 17.799285380499487],  // Biskupa Buconjića, Mostar
+  "254": [43.34704678117593, 17.79188922228908],  // Kneza Mislava, Mostar
+  "256": [44.12869466101471, 18.580181832404403],  // Olovo
+  "257": [44.53480180562693, 16.765528282964336],  // Ključ
+  "258": [45.01416570753211, 18.326226831743178],  // Odžak
+  "259": [43.65907249725608, 17.762839613374247],  // Jablanica 2
+  "260": [44.41359260202248, 18.537781041867287],  // Armije BiH 8, Banovići
+  "262": [43.342885198000225, 17.812819609646212],  // Braće Fejića, Mostar
+  "263": [44.73062807738145, 18.81822731179214],  // Ekrema Agića, Čelić
+  "264": [44.47278692408689, 18.789236188891124],  // Tojšići, Kalesija
+  "265": [44.809071706674345, 17.20957180796912],  // Branka Popovića, Banja Luka
+  "266": [44.49999900827789, 19.11370896401663],  // Kozluk, Zvornik
+  "267": [43.66079044906147, 17.76177903069427],  // Sulje Čilića 2, Jablanica
+  "268": [44.20644037316687, 17.89738792430621],  // Zavnobih 88 (Brist), Zenica
+  "269": [44.24091993313787, 17.577960865177463],  // Bosanska, Turbe
+  "270": [44.53643124266198, 18.69756919801399],  // Armije BiH (Pecara), Tuzla
+  "271": [43.829060730342576, 18.312042456532605],  // Butmirska 14 (Grand), Ilidža
+  "272": [43.80004499361075, 18.309633886190042],  // Reisa Hadžiomerovića 7a, Hrasnica
+  "273": [44.98331813640248, 15.876758477876926],  // Ćoralići, Cazin
+  "274": [43.3460, 17.8110],  // Mostar (bez adrese)
+  "276": [44.4637, 18.7830],  // Kalesija 3
+};
+// ─────────────────────────────────────────────────────────────────────────────
+
+function getObjCoords(id) {
+  return OBJECT_COORDS[id] || null;
+}
+
+function initMap() {
+  const mapEl = document.getElementById('bh-map');
+  if (!mapEl || typeof L === 'undefined') return;
+  if (window._bhMap) { try { window._bhMap.remove(); } catch(e){} window._bhMap = null; }
+
+  const map = L.map('bh-map', {
+    center: [44.15, 17.50],
+    zoom: 8,
+    zoomControl: true,
+    scrollWheelZoom: true,
+  });
+  window._bhMap = map;
+
+  // Dark CartoDB tiles — uklapaju se s tamnom temom portala
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution: '© <a href="https://www.openstreetmap.org/copyright">OSM</a> © <a href="https://carto.com/attributions">CARTO</a>',
+    subdomains: 'abcd',
+    maxZoom: 19,
+  }).addTo(map);
+
+  let count = 0;
+  for (const id in OBJECT_DATA) {
+    const name = OBJECT_NAMES[id] || '';
+    if (!name || name.includes('NE POSTOJI')) continue;
+    const coords = getObjCoords(id);
+    if (!coords) continue;
+    const d = getObjectData(id);
+
+    const icon = L.divIcon({
+      className: '',
+      html: `<div class="bm-dot" data-id="${id}"></div>`,
+      iconSize: [9, 9],
+      iconAnchor: [4, 4],
+      popupAnchor: [0, -8],
+    });
+
+    const marker = L.marker(coords, { icon }).addTo(map);
+
+    const addrLine = (d && d.adresa)
+      ? `<div style="font-size:10px;color:#606060;margin-top:3px;">${escapeHtml(d.adresa)}</div>` : '';
+
+    marker.bindTooltip(
+      `<div style="font-family:'Sora',sans-serif;min-width:130px;">` +
+        `<div style="font-size:10px;font-weight:700;color:#00a651;letter-spacing:.6px;text-transform:uppercase;">Objekat #${id}</div>` +
+        `<div style="font-size:12px;font-weight:600;color:#ececec;margin-top:3px;">${escapeHtml(name)}</div>` +
+        addrLine +
+        `<div style="font-size:9.5px;color:#444;margin-top:6px;border-top:1px solid #2a2a2a;padding-top:5px;">Klikni za detalje →</div>` +
+      `</div>`,
+      { sticky: false, direction: 'top', offset: [0, -6] }
+    );
+    marker.on('click', () => { window.showObject(id); });
+    count++;
+  }
+
+  // Legenda
+  const legend = L.control({ position: 'bottomleft' });
+  legend.onAdd = () => {
+    const div = L.DomUtil.create('div', '');
+    div.style.cssText = 'background:rgba(14,14,14,.9);border:1px solid #2a2a2a;border-radius:7px;padding:6px 11px;font-family:Sora,sans-serif;font-size:10.5px;color:#666;pointer-events:none;display:flex;align-items:center;gap:7px;';
+    div.innerHTML = `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#00a651;box-shadow:0 0 4px rgba(0,166,81,.5);flex-shrink:0;"></span><span style="color:#00a651;font-weight:700;">${count}</span>&nbsp;aktivnih objekata`;
+    return div;
+  };
+  legend.addTo(map);
+}
+
+
+</script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</body>
+</html>
+
